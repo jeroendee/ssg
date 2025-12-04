@@ -12,6 +12,7 @@ A minimal static site generator for blogs, written in Go.
 - Configurable navigation menu
 - Asset copying (CSS, images, etc.)
 - Auto-generated homepage, blog listing, and 404 page
+- Development server for local preview
 
 ## Installation
 
@@ -73,6 +74,8 @@ Your generated site will be in the `public/` directory.
 
 ## Usage
 
+### Build
+
 ```
 ssg build [flags]
 
@@ -82,6 +85,31 @@ Flags:
       --content string   content directory (overrides config)
       --assets string    assets directory (default "assets")
 ```
+
+### Serve
+
+Start a local development server to preview your site:
+
+```
+ssg serve [flags]
+
+Flags:
+  -c, --config string    path to config file (default "ssg.yaml")
+  -p, --port int         port to serve on (default 8080)
+  -d, --dir string       directory to serve (overrides config output_dir)
+  -b, --build            build site before serving
+```
+
+Examples:
+
+```bash
+ssg serve                     # Serve on http://localhost:8080
+ssg serve -p 3000             # Serve on port 3000
+ssg serve --build             # Build first, then serve
+ssg serve --dir ./other-dir   # Serve a specific directory
+```
+
+Press `Ctrl+C` to stop the server.
 
 ## Content Format
 
