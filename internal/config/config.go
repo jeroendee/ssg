@@ -1,0 +1,91 @@
+package config
+
+import (
+	"errors"
+	"os"
+
+	"github.com/jeroendee/ssg/internal/model"
+	"gopkg.in/yaml.v3"
+)
+
+// yamlConfig represents the YAML file structure.
+type yamlConfig struct {
+	Site struct {
+		Title   string `yaml:"title"`
+		BaseURL string `yaml:"baseURL"`
+		Author  string `yaml:"author"`
+	} `yaml:"site"`
+	Build struct {
+		Content string `yaml:"content"`
+		Output  string `yaml:"output"`
+	} `yaml:"build"`
+	Navigation []struct {
+		Title string `yaml:"title"`
+		URL   string `yaml:"url"`
+	} `yaml:"navigation"`
+}
+
+// Options provides CLI flag overrides for configuration.
+type Options struct {
+	ContentDir string
+	OutputDir  string
+}
+
+// Load reads configuration from a YAML file.
+func Load(path string) (*model.Config, error) {
+	return LoadWithOptions(path, Options{})
+}
+
+// LoadWithOptions reads configuration with CLI overrides.
+func LoadWithOptions(path string, opts Options) (*model.Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var yc yamlConfig
+	if err := yaml.Unmarshal(data, &yc); err != nil {
+		return nil, err
+	}
+
+	if yc.Site.Title == "" {
+		return nil, errors.New("config: missing required field 'site.title'")
+	}
+	if yc.Site.BaseURL == "" {
+		return nil, errors.New("config: missing required field 'site.baseURL'")
+	}
+
+	cfg := &model.Config{
+		Title:      yc.Site.Title,
+		BaseURL:    yc.Site.BaseURL,
+		Author:     yc.Site.Author,
+		ContentDir: yc.Build.Content,
+		OutputDir:  yc.Build.Output,
+	}
+
+	// Apply defaults
+	if cfg.ContentDir == "" {
+		cfg.ContentDir = "content"
+	}
+	if cfg.OutputDir == "" {
+		cfg.OutputDir = "public"
+	}
+
+	// Apply overrides
+	if opts.ContentDir != "" {
+		cfg.ContentDir = opts.ContentDir
+	}
+	if opts.OutputDir != "" {
+		cfg.OutputDir = opts.OutputDir
+	}
+
+	// Convert navigation
+	for _, nav := range yc.Navigation {
+		cfg.Navigation = append(cfg.Navigation, model.NavItem{
+			Title: nav.Title,
+			URL:   nav.URL,
+		})
+	}
+
+	return cfg, nil
+}

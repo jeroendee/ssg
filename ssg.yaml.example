@@ -1,0 +1,60 @@
+# ssg - Static Site Generator Configuration
+#
+# This is an example configuration file for the ssg static site generator.
+# Copy this file to 'ssg.yaml' and customize as needed.
+
+# Site information
+site:
+  # Site title (required) - displayed in header and page titles
+  title: My Blog
+
+  # Base URL (required) - the root URL where the site will be hosted
+  baseURL: https://example.com
+
+  # Author name (optional) - used for metadata
+  author: Your Name
+
+# Build settings
+build:
+  # Content directory (default: "content")
+  # Contains markdown files for pages and blog posts
+  content: content
+
+  # Output directory (default: "public")
+  # Where generated HTML files will be written
+  output: public
+
+# Navigation menu
+# Each item appears in the site header
+navigation:
+  - title: Home
+    url: /
+  - title: About
+    url: /about/
+  - title: Blog
+    url: /blog/
+
+# Directory structure expected:
+#
+# project/
+# ├── ssg.yaml              # This config file
+# ├── assets/               # Static files (CSS, images, favicon)
+# │   └── style.css
+# ├── content/              # Markdown content
+# │   ├── about.md          # Static page (becomes /about/)
+# │   ├── contact.md        # Static page (becomes /contact/)
+# │   └── blog/             # Blog posts directory
+# │       ├── 2024-01-15-first-post.md   # Blog post
+# │       └── 2024-02-20-second-post.md  # Blog post
+# └── public/               # Generated output (created by build)
+#
+# Page frontmatter format:
+#
+#   ---
+#   title: Page Title
+#   ---
+#
+#   Markdown content goes here.
+#
+# Blog post filenames should be: YYYY-MM-DD-slug.md
+# The date is extracted from the filename.

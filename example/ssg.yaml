@@ -1,0 +1,16 @@
+site:
+  title: Quality Shepherd
+  baseURL: https://www.qualityshepherd.nl
+  author: Jeroen
+
+build:
+  content: content
+  output: public
+
+navigation:
+  - title: Home
+    url: /
+  - title: About
+    url: /about/
+  - title: Blog
+    url: /blog/

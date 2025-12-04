@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Post.Title}} - {{.Site.Title}}</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="title">{{.Site.Title}}</a>
+        <nav>
+            {{range .Site.Navigation}}
+            <a href="{{.URL}}">{{.Title}}</a>
+            {{end}}
+        </nav>
+    </header>
+    <main>
+        <article>
+            <h1>{{.Post.Title}}</h1>
+            <p class="date">{{.Post.DateFormatted}}</p>
+            <div class="content">
+                {{.Post.Content}}
+            </div>
+        </article>
+    </main>
+    <footer>
+        <span>Made with ssg</span>
+    </footer>
+</body>
+</html>
