@@ -7,3 +7,7 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 example
+playwright.config.ts
+package.json
+package-lock.json
+.playwright-mcp
