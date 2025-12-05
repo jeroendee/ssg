@@ -27,14 +27,16 @@ func New() (*Renderer, error) {
 
 // baseData holds data for base template rendering.
 type baseData struct {
-	Site    model.Site
-	Content template.HTML
+	Site      model.Site
+	PageTitle string
+	Content   template.HTML
 }
 
 // pageData holds data for page template rendering.
 type pageData struct {
-	Site model.Site
-	Page struct {
+	Site      model.Site
+	PageTitle string
+	Page      struct {
 		Title   string
 		Content template.HTML
 	}
@@ -49,14 +51,16 @@ type blogPostItem struct {
 
 // blogListData holds data for blog list template rendering.
 type blogListData struct {
-	Site  model.Site
-	Posts []blogPostItem
+	Site      model.Site
+	PageTitle string
+	Posts     []blogPostItem
 }
 
 // blogPostData holds data for blog post template rendering.
 type blogPostData struct {
-	Site model.Site
-	Post struct {
+	Site      model.Site
+	PageTitle string
+	Post      struct {
 		Title         string
 		DateFormatted string
 		Content       template.HTML
@@ -80,7 +84,8 @@ func (r *Renderer) RenderBase(site model.Site, content string) (string, error) {
 // RenderPage renders a static page with the page template.
 func (r *Renderer) RenderPage(site model.Site, page model.Page) (string, error) {
 	data := pageData{
-		Site: site,
+		Site:      site,
+		PageTitle: page.Title,
 	}
 	data.Page.Title = page.Title
 	data.Page.Content = template.HTML(page.Content)
@@ -104,8 +109,9 @@ func (r *Renderer) RenderBlogList(site model.Site, posts []model.Post) (string, 
 	}
 
 	data := blogListData{
-		Site:  site,
-		Posts: items,
+		Site:      site,
+		PageTitle: "Blog",
+		Posts:     items,
 	}
 
 	var buf bytes.Buffer
@@ -118,7 +124,8 @@ func (r *Renderer) RenderBlogList(site model.Site, posts []model.Post) (string, 
 // RenderBlogPost renders a single blog post.
 func (r *Renderer) RenderBlogPost(site model.Site, post model.Post) (string, error) {
 	data := blogPostData{
-		Site: site,
+		Site:      site,
+		PageTitle: post.Title,
 	}
 	data.Post.Title = post.Title
 	data.Post.DateFormatted = post.Date.Format("2006-01-02")
@@ -133,7 +140,8 @@ func (r *Renderer) RenderBlogPost(site model.Site, post model.Post) (string, err
 
 // homeData holds data for home page template rendering.
 type homeData struct {
-	Site model.Site
+	Site      model.Site
+	PageTitle string
 }
 
 // RenderHome renders the homepage.
@@ -151,13 +159,15 @@ func (r *Renderer) RenderHome(site model.Site) (string, error) {
 
 // notFoundData holds data for 404 page template rendering.
 type notFoundData struct {
-	Site model.Site
+	Site      model.Site
+	PageTitle string
 }
 
 // Render404 renders the 404 error page.
 func (r *Renderer) Render404(site model.Site) (string, error) {
 	data := notFoundData{
-		Site: site,
+		Site:      site,
+		PageTitle: "Page Not Found",
 	}
 
 	var buf bytes.Buffer

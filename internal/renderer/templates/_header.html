@@ -1,0 +1,11 @@
+{{define "_header.html"}}
+    <header>
+        {{if .Site.Logo}}<img src="{{.Site.Logo}}" alt="{{.Site.Title}} logo" class="logo">{{end}}
+        <a href="/" class="title">{{.Site.Title}}</a>
+        <nav>
+            {{range .Site.Navigation}}
+            <a href="{{.URL}}">{{.Title}}</a>
+            {{end}}
+        </nav>
+    </header>
+{{end}}

@@ -1,0 +1,12 @@
+{{define "_head.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{if .PageTitle}}{{.PageTitle}} - {{end}}{{.Site.Title}}</title>
+    <link rel="stylesheet" href="/style.css">
+    {{if .Site.Favicon}}<link rel="icon" href="{{.Site.Favicon}}" type="image/svg+xml">{{end}}
+</head>
+<body>
+{{end}}

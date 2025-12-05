@@ -1,28 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Site.Title}}</title>
-    <link rel="stylesheet" href="/style.css">
-    {{if .Site.Favicon}}<link rel="icon" href="{{.Site.Favicon}}" type="image/svg+xml">{{end}}
-</head>
-<body>
-    <header>
-        {{if .Site.Logo}}<img src="{{.Site.Logo}}" alt="{{.Site.Title}} logo" class="logo">{{end}}
-        <a href="/" class="title">{{.Site.Title}}</a>
-        <nav>
-            {{range .Site.Navigation}}
-            <a href="{{.URL}}">{{.Title}}</a>
-            {{end}}
-        </nav>
-    </header>
+{{template "_head.html" .}}
+{{template "_header.html" .}}
     <main>
         <h1>Welcome</h1>
         <p>Welcome to {{.Site.Title}}</p>
     </main>
-    <footer>
-        <span>Made with ssg</span>
-    </footer>
-</body>
-</html>
+{{template "_footer.html" .}}
