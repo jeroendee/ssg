@@ -470,3 +470,56 @@ func TestRender404(t *testing.T) {
 		})
 	}
 }
+
+func TestRenderBase_WithLogo(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title: "Quality Shepherd",
+		Logo:  "/logo.svg",
+	}
+
+	got, err := r.RenderBase(site, "Test Content")
+	if err != nil {
+		t.Fatalf("RenderBase() error = %v", err)
+	}
+
+	// Check logo image is rendered
+	if !strings.Contains(got, `<img src="/logo.svg"`) {
+		t.Error("RenderBase() should render logo image when Logo is set")
+	}
+
+	// Check alt attribute contains site title
+	if !strings.Contains(got, `alt="Quality Shepherd`) {
+		t.Error("RenderBase() logo should have alt attribute with site title")
+	}
+}
+
+func TestRenderBase_WithoutLogo(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title: "Quality Shepherd",
+		Logo:  "",
+	}
+
+	got, err := r.RenderBase(site, "Test Content")
+	if err != nil {
+		t.Fatalf("RenderBase() error = %v", err)
+	}
+
+	// Check logo image is NOT rendered
+	if strings.Contains(got, `<img src="`) {
+		t.Error("RenderBase() should not render logo image when Logo is empty")
+	}
+}

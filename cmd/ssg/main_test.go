@@ -409,6 +409,99 @@ build:
 	}
 }
 
+func TestServeCommand_WithBuildFlag_CopiesAssets(t *testing.T) {
+	t.Parallel()
+
+	// Setup test directories
+	tmpDir := t.TempDir()
+	contentDir := filepath.Join(tmpDir, "content")
+	outputDir := filepath.Join(tmpDir, "public")
+	assetsDir := filepath.Join(tmpDir, "assets")
+	os.MkdirAll(contentDir, 0755)
+	os.MkdirAll(assetsDir, 0755)
+
+	// Create a simple markdown file
+	os.WriteFile(filepath.Join(contentDir, "index.md"), []byte("# Hello"), 0644)
+
+	// Create CSS file in assets
+	cssContent := "body { color: red; }"
+	os.WriteFile(filepath.Join(assetsDir, "style.css"), []byte(cssContent), 0644)
+
+	// Create config file
+	configPath := filepath.Join(tmpDir, "ssg.yaml")
+	configContent := `site:
+  title: Test Site
+  baseURL: https://example.com
+  author: Test Author
+build:
+  content: ` + contentDir + `
+  output: ` + outputDir + `
+`
+	os.WriteFile(configPath, []byte(configContent), 0644)
+
+	// Change to tmpDir so relative "assets" path works
+	origDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(origDir)
+
+	// Use cancellable context to stop server after build
+	ctx, cancel := context.WithCancel(context.Background())
+	addrCh := make(chan string, 1)
+	errCh := make(chan error, 1)
+
+	go func() {
+		errCh <- runServeWithContext(ctx, configPath, 0, "", true, addrCh)
+	}()
+
+	// Wait for server to start (indicates build completed)
+	var addr string
+	select {
+	case addr = <-addrCh:
+		// Server started, build completed
+	case err := <-errCh:
+		t.Fatalf("runServeWithContext() error = %v", err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for server to start")
+	}
+
+	// Verify assets were copied to output directory
+	copiedCSS := filepath.Join(outputDir, "style.css")
+	if _, err := os.Stat(copiedCSS); os.IsNotExist(err) {
+		t.Error("serve --build should copy assets to output directory")
+	}
+
+	// Verify CSS is accessible via HTTP
+	resp, err := http.Get("http://" + addr + "/style.css")
+	if err != nil {
+		t.Fatalf("GET /style.css failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("GET /style.css status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("reading body: %v", err)
+	}
+
+	if string(body) != cssContent {
+		t.Errorf("GET /style.css body = %q, want %q", body, cssContent)
+	}
+
+	// Shutdown server
+	cancel()
+
+	// Wait for clean shutdown
+	select {
+	case <-errCh:
+		// Server stopped
+	case <-time.After(2 * time.Second):
+		t.Error("timeout waiting for server to stop")
+	}
+}
+
 func TestServeCommand_InvalidPort(t *testing.T) {
 	t.Parallel()
 

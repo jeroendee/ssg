@@ -159,6 +159,7 @@ func runServeWithContext(ctx context.Context, configPath string, port int, dir s
 	// Optionally build first
 	if doBuild {
 		b := builder.New(cfg)
+		b.SetAssetsDir("assets")
 		if err := b.Build(); err != nil {
 			return fmt.Errorf("building site: %w", err)
 		}

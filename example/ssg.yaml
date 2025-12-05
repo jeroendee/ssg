@@ -2,6 +2,7 @@ site:
   title: Quality Shepherd
   baseURL: https://www.qualityshepherd.nl
   author: Jeroen
+  logo: /logo.svg
 
 build:
   content: content

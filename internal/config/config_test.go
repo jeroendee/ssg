@@ -177,3 +177,46 @@ navigation:
 		t.Errorf("Navigation = %v, want %v", cfg.Navigation, []model.NavItem{want})
 	}
 }
+
+func TestLoad_WithLogo(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+  logo: "/logo.svg"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Logo != "/logo.svg" {
+		t.Errorf("Logo = %q, want %q", cfg.Logo, "/logo.svg")
+	}
+}
+
+func TestLoad_WithoutLogo(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Logo != "" {
+		t.Errorf("Logo = %q, want empty string", cfg.Logo)
+	}
+}
