@@ -37,6 +37,8 @@ site:
   title: My Blog
   baseURL: https://example.com
   author: Your Name
+  logo: /logo.svg
+  favicon: /favicon.svg
 
 build:
   content: content
@@ -148,6 +150,8 @@ The date is extracted from the filename: `2024-01-15-my-first-post.md` → publi
 | `site.title` | Yes | - | Site title for header and page titles |
 | `site.baseURL` | Yes | - | Root URL where the site will be hosted |
 | `site.author` | No | - | Author name for metadata |
+| `site.logo` | No | - | Path to site logo (e.g., `/logo.svg`) |
+| `site.favicon` | No | - | Path to favicon (e.g., `/favicon.svg`) |
 | `build.content` | No | `content` | Directory containing markdown files |
 | `build.output` | No | `public` | Directory for generated HTML |
 | `navigation` | No | - | List of navigation menu items |
