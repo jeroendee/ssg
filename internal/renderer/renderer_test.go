@@ -523,3 +523,51 @@ func TestRenderBase_WithoutLogo(t *testing.T) {
 		t.Error("RenderBase() should not render logo image when Logo is empty")
 	}
 }
+
+func TestRenderBase_WithFavicon(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Quality Shepherd",
+		Favicon: "/favicon.svg",
+	}
+
+	got, err := r.RenderBase(site, "Test Content")
+	if err != nil {
+		t.Fatalf("RenderBase() error = %v", err)
+	}
+
+	// Check favicon link is rendered
+	if !strings.Contains(got, `<link rel="icon" href="/favicon.svg" type="image/svg+xml">`) {
+		t.Error("RenderBase() should render favicon link when Favicon is set")
+	}
+}
+
+func TestRenderBase_WithoutFavicon(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Quality Shepherd",
+		Favicon: "",
+	}
+
+	got, err := r.RenderBase(site, "Test Content")
+	if err != nil {
+		t.Fatalf("RenderBase() error = %v", err)
+	}
+
+	// Check favicon link is NOT rendered
+	if strings.Contains(got, `rel="icon"`) {
+		t.Error("RenderBase() should not render favicon link when Favicon is empty")
+	}
+}

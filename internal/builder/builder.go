@@ -35,6 +35,7 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 		BaseURL:    b.cfg.BaseURL,
 		Author:     b.cfg.Author,
 		Logo:       b.cfg.Logo,
+		Favicon:    b.cfg.Favicon,
 		Navigation: b.cfg.Navigation,
 	}
 

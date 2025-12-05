@@ -3,6 +3,7 @@ site:
   baseURL: https://www.qualityshepherd.nl
   author: Jeroen
   logo: /logo.svg
+  favicon: /favicon.svg
 
 build:
   content: content

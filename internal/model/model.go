@@ -30,6 +30,7 @@ type Site struct {
 	BaseURL    string
 	Author     string
 	Logo       string
+	Favicon    string
 	Navigation []NavItem
 	Pages      []Page
 	Posts      []Post
@@ -41,6 +42,7 @@ type Config struct {
 	BaseURL    string
 	Author     string
 	Logo       string
+	Favicon    string
 	ContentDir string
 	OutputDir  string
 	Navigation []NavItem

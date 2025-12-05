@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog - {{.Site.Title}}</title>
     <link rel="stylesheet" href="/style.css">
+    {{if .Site.Favicon}}<link rel="icon" href="{{.Site.Favicon}}" type="image/svg+xml">{{end}}
 </head>
 <body>
     <header>
