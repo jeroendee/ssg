@@ -11,3 +11,4 @@ playwright.config.ts
 package.json
 package-lock.json
 .playwright-mcp
+.github/copilot-instructions.md
