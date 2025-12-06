@@ -1,7 +1,9 @@
 {{define "_header.html"}}
 <header>
     <div class="header-left">
-        <a href="/" class="site-title">{{.Site.Title}}</a>
+        <a href="/" class="site-title">
+            <h2>{{.Site.Title}}</h2>
+        </a>
         <nav>
             {{range .Site.Navigation}}
             <a href="{{.URL}}">{{.Title}}</a>
@@ -10,7 +12,7 @@
     </div>
     {{if .Site.Logo}}
     <div class="header-right">
-        <img src="{{.Site.Logo}}" alt="{{.Site.Title}} logo" class="logo">
+        <img src="{{.Site.Logo}}" alt="{{.Site.Title}} logo" class="logo" />
     </div>
     {{end}}
 </header>
