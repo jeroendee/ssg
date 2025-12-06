@@ -31,6 +31,48 @@ a {
   font-weight: 400;
 }
 
+/* Header styling */
+header {
+  padding: 20px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: -20px -20px 20px -20px;
+  width: calc(100% + 40px);
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.site-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.site-title h2 {
+  font-size: inherit;
+  margin: 0;
+}
+
+header nav a {
+  text-decoration: underline;
+  margin-right: 15px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+header .logo {
+  width: auto;
+  height: 80px;
+}
+
 nav a {
   margin-right: 10px;
 }
