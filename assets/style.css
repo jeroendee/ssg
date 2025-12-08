@@ -34,6 +34,8 @@ a {
 /* Header styling - float-based responsive layout */
 header {
   margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ccc;
   overflow: hidden;
 }
 
@@ -189,5 +191,9 @@ ul.blog-list li a:visited {
 
   .date {
     color: #aaa;
+  }
+
+  header {
+    border-bottom-color: #555;
   }
 }

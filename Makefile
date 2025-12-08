@@ -27,7 +27,7 @@ build:
 	go build -o $(BIN_DIR)/ssg ./cmd/ssg
 
 install:
-	go install
+	go install ./cmd/ssg
 
 # Development server targets
 serve: kill assets build
