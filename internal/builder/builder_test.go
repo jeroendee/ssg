@@ -640,3 +640,152 @@ func TestBuild_SkipsFeedWhenNoPosts(t *testing.T) {
 		t.Errorf("Build() should not create feed when no posts exist")
 	}
 }
+
+func TestBuild_GeneratesRobotsTxt(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	robotsPath := filepath.Join(outputDir, "robots.txt")
+	if _, err := os.Stat(robotsPath); os.IsNotExist(err) {
+		t.Errorf("Build() did not generate robots.txt at %s", robotsPath)
+	}
+
+	content, err := os.ReadFile(robotsPath)
+	if err != nil {
+		t.Fatalf("failed to read robots.txt: %v", err)
+	}
+
+	expected := "User-agent: *\nAllow: /\nSitemap: https://example.com/sitemap.xml\n"
+	if string(content) != expected {
+		t.Errorf("robots.txt content = %q, want %q", string(content), expected)
+	}
+}
+
+func TestBuild_GeneratesSitemap(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// Create pages and posts
+	writeFile(t, filepath.Join(contentDir, "about.md"), "---\ntitle: About\n---\nAbout content")
+	writeFile(t, filepath.Join(contentDir, "contact.md"), "---\ntitle: Contact\n---\nContact content")
+
+	os.MkdirAll(filepath.Join(contentDir, "blog"), 0755)
+	writeFile(t, filepath.Join(contentDir, "blog", "2021-03-26-first-post.md"),
+		"---\ntitle: First Post\n---\nFirst content")
+	writeFile(t, filepath.Join(contentDir, "blog", "2021-04-15-second-post.md"),
+		"---\ntitle: Second Post\n---\nSecond content")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	sitemapPath := filepath.Join(outputDir, "sitemap.xml")
+	if _, err := os.Stat(sitemapPath); os.IsNotExist(err) {
+		t.Fatalf("Build() did not generate sitemap.xml at %s", sitemapPath)
+	}
+
+	content, err := os.ReadFile(sitemapPath)
+	if err != nil {
+		t.Fatalf("failed to read sitemap.xml: %v", err)
+	}
+
+	sitemapStr := string(content)
+
+	// Verify sitemap XML namespace
+	if !strings.Contains(sitemapStr, `xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"`) {
+		t.Error("sitemap.xml missing correct namespace")
+	}
+
+	// Verify pages are included with full URLs
+	if !strings.Contains(sitemapStr, "https://example.com/about/") {
+		t.Error("sitemap.xml missing about page URL")
+	}
+	if !strings.Contains(sitemapStr, "https://example.com/contact/") {
+		t.Error("sitemap.xml missing contact page URL")
+	}
+
+	// Verify posts are included with full URLs and dates
+	if !strings.Contains(sitemapStr, "https://example.com/blog/first-post/") {
+		t.Error("sitemap.xml missing first post URL")
+	}
+	if !strings.Contains(sitemapStr, "https://example.com/blog/second-post/") {
+		t.Error("sitemap.xml missing second post URL")
+	}
+	if !strings.Contains(sitemapStr, "2021-03-26") {
+		t.Error("sitemap.xml missing first post date")
+	}
+	if !strings.Contains(sitemapStr, "2021-04-15") {
+		t.Error("sitemap.xml missing second post date")
+	}
+
+	// Verify lastmod elements exist for posts
+	if !strings.Contains(sitemapStr, "<lastmod>") {
+		t.Error("sitemap.xml missing lastmod elements")
+	}
+}
+
+func TestBuild_SitemapWithNoPosts(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// Create only pages
+	writeFile(t, filepath.Join(contentDir, "about.md"), "---\ntitle: About\n---\nAbout content")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	sitemapPath := filepath.Join(outputDir, "sitemap.xml")
+	if _, err := os.Stat(sitemapPath); os.IsNotExist(err) {
+		t.Fatalf("Build() did not generate sitemap.xml at %s", sitemapPath)
+	}
+
+	content, err := os.ReadFile(sitemapPath)
+	if err != nil {
+		t.Fatalf("failed to read sitemap.xml: %v", err)
+	}
+
+	sitemapStr := string(content)
+
+	// Verify page is included
+	if !strings.Contains(sitemapStr, "https://example.com/about/") {
+		t.Error("sitemap.xml missing about page URL")
+	}
+}

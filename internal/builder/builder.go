@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"encoding/xml"
 	"io"
 	"os"
 	"path/filepath"
@@ -181,6 +182,16 @@ func (b *Builder) Build() error {
 		return err
 	}
 
+	// Generate sitemap.xml
+	if err := b.generateSitemap(*site); err != nil {
+		return err
+	}
+
+	// Generate robots.txt
+	if err := b.generateRobotsTxt(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -330,4 +341,61 @@ func copyFile(src, dst string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
+}
+
+// generateRobotsTxt creates robots.txt with sitemap reference.
+func (b *Builder) generateRobotsTxt() error {
+	content := "User-agent: *\nAllow: /\nSitemap: " + b.cfg.BaseURL + "/sitemap.xml\n"
+	robotsPath := filepath.Join(b.cfg.OutputDir, "robots.txt")
+	return os.WriteFile(robotsPath, []byte(content), 0644)
+}
+
+// sitemapURL represents a URL entry in the sitemap.
+type sitemapURL struct {
+	Loc     string `xml:"loc"`
+	LastMod string `xml:"lastmod,omitempty"`
+}
+
+// sitemapURLSet represents the root urlset element.
+type sitemapURLSet struct {
+	XMLName xml.Name     `xml:"urlset"`
+	Xmlns   string       `xml:"xmlns,attr"`
+	URLs    []sitemapURL `xml:"url"`
+}
+
+// generateSitemap creates sitemap.xml with all pages and posts.
+func (b *Builder) generateSitemap(site model.Site) error {
+	var urls []sitemapURL
+
+	// Add pages (without lastmod)
+	for _, page := range site.Pages {
+		urls = append(urls, sitemapURL{
+			Loc: site.BaseURL + "/" + page.Slug + "/",
+		})
+	}
+
+	// Add posts (with lastmod using post date)
+	for _, post := range site.Posts {
+		urls = append(urls, sitemapURL{
+			Loc:     site.BaseURL + "/blog/" + post.Slug + "/",
+			LastMod: post.Date.Format("2006-01-02"),
+		})
+	}
+
+	urlset := sitemapURLSet{
+		Xmlns: "http://www.sitemaps.org/schemas/sitemap/0.9",
+		URLs:  urls,
+	}
+
+	var buf strings.Builder
+	buf.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
+
+	enc := xml.NewEncoder(&buf)
+	enc.Indent("", "  ")
+	if err := enc.Encode(urlset); err != nil {
+		return err
+	}
+
+	sitemapPath := filepath.Join(b.cfg.OutputDir, "sitemap.xml")
+	return os.WriteFile(sitemapPath, []byte(buf.String()), 0644)
 }
