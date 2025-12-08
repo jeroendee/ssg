@@ -33,9 +33,7 @@ a {
 
 /* Header styling - float-based responsive layout */
 header {
-  padding: 20px;
-  margin: -20px -20px 20px -20px;
-  width: calc(100% + 40px);
+  margin-bottom: 20px;
   overflow: hidden;
 }
 
