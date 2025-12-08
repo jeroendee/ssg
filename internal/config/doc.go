@@ -5,8 +5,11 @@
 //
 //	site:
 //	  title: My Site
+//	  description: A brief description of my site
 //	  baseURL: https://example.com
 //	  author: Author Name
+//	  logo: /images/logo.png
+//	  favicon: /images/favicon.ico
 //	build:
 //	  content: content
 //	  output: public

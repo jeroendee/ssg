@@ -1,8 +1,10 @@
 // Package server provides a development HTTP server for static sites.
 //
 // The server serves files from a directory with support for clean URLs,
-// where requests to /path/ are served from /path/index.html. Static assets
-// such as CSS and images are served with appropriate content types.
+// where requests to /path/ are served from /path/index.html. If index.html
+// does not exist, the server will serve /path/index.xml (e.g., RSS feeds)
+// with the correct Content-Type. Static assets such as CSS and images are
+// served with appropriate content types.
 //
 // # Usage
 //

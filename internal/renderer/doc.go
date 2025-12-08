@@ -27,4 +27,12 @@
 //	html, err := r.RenderPage(site, page)
 //
 // Templates are embedded at compile time and require no external files.
+//
+// # Methods
+//
+// RenderBase renders the base template with site data and content.
+// It accepts raw HTML content and wraps it with the site's base template.
+//
+// RenderFeed generates an RSS 2.0 feed from blog posts. It includes up to
+// 20 most recent posts with full content wrapped in CDATA sections.
 package renderer
