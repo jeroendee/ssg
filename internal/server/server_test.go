@@ -113,3 +113,76 @@ func TestServerStart(t *testing.T) {
 		t.Errorf("Shutdown failed: %v", err)
 	}
 }
+
+func TestServerServesIndexXML(t *testing.T) {
+	t.Parallel()
+
+	// Create temp directory with feed/index.xml (no index.html)
+	dir := t.TempDir()
+	feedDir := filepath.Join(dir, "feed")
+	if err := os.MkdirAll(feedDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	xmlContent := `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Test Feed</title>
+  </channel>
+</rss>`
+
+	if err := os.WriteFile(filepath.Join(feedDir, "index.xml"), []byte(xmlContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Use port 0 for automatic port assignment
+	srv := server.New(server.Config{Port: 0, Dir: dir})
+
+	// Start server in goroutine
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- srv.Start()
+	}()
+
+	// Wait for server to be ready
+	time.Sleep(50 * time.Millisecond)
+
+	// Make request to /feed/ (trailing slash for directory)
+	addr := srv.Addr()
+	if addr == "" {
+		t.Fatal("Addr() returned empty string")
+	}
+
+	resp, err := http.Get("http://" + addr + "/feed/")
+	if err != nil {
+		t.Fatalf("GET /feed/ failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	// Verify Content-Type contains application/xml
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" || (contentType != "application/xml" && contentType != "text/xml; charset=utf-8") {
+		t.Errorf("Content-Type = %q, want application/xml or text/xml", contentType)
+	}
+
+	// Verify body is XML content (not directory listing)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("reading body: %v", err)
+	}
+
+	if string(body) != xmlContent {
+		t.Errorf("body = %q, want %q", body, xmlContent)
+	}
+
+	// Shutdown server
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		t.Errorf("Shutdown failed: %v", err)
+	}
+}
