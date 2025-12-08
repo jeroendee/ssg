@@ -11,11 +11,12 @@ import (
 // yamlConfig represents the YAML file structure.
 type yamlConfig struct {
 	Site struct {
-		Title   string `yaml:"title"`
-		BaseURL string `yaml:"baseURL"`
-		Author  string `yaml:"author"`
-		Logo    string `yaml:"logo"`
-		Favicon string `yaml:"favicon"`
+		Title       string `yaml:"title"`
+		Description string `yaml:"description"`
+		BaseURL     string `yaml:"baseURL"`
+		Author      string `yaml:"author"`
+		Logo        string `yaml:"logo"`
+		Favicon     string `yaml:"favicon"`
 	} `yaml:"site"`
 	Build struct {
 		Content string `yaml:"content"`
@@ -58,13 +59,14 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 	}
 
 	cfg := &model.Config{
-		Title:      yc.Site.Title,
-		BaseURL:    yc.Site.BaseURL,
-		Author:     yc.Site.Author,
-		Logo:       yc.Site.Logo,
-		Favicon:    yc.Site.Favicon,
-		ContentDir: yc.Build.Content,
-		OutputDir:  yc.Build.Output,
+		Title:       yc.Site.Title,
+		Description: yc.Site.Description,
+		BaseURL:     yc.Site.BaseURL,
+		Author:      yc.Site.Author,
+		Logo:        yc.Site.Logo,
+		Favicon:     yc.Site.Favicon,
+		ContentDir:  yc.Build.Content,
+		OutputDir:   yc.Build.Output,
 	}
 
 	// Apply defaults

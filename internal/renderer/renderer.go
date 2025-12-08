@@ -3,7 +3,9 @@ package renderer
 import (
 	"bytes"
 	"embed"
+	"encoding/xml"
 	"html/template"
+	"time"
 
 	"github.com/jeroendee/ssg/internal/model"
 )
@@ -174,5 +176,80 @@ func (r *Renderer) Render404(site model.Site) (string, error) {
 	if err := r.templates.ExecuteTemplate(&buf, "404.html", data); err != nil {
 		return "", err
 	}
+	return buf.String(), nil
+}
+
+// rssChannel represents the RSS channel element.
+type rssChannel struct {
+	Title         string    `xml:"title"`
+	Link          string    `xml:"link"`
+	Description   string    `xml:"description"`
+	LastBuildDate string    `xml:"lastBuildDate"`
+	Items         []rssItem `xml:"item"`
+}
+
+// rssItem represents an RSS item element.
+type rssItem struct {
+	Title       string   `xml:"title"`
+	Link        string   `xml:"link"`
+	Description rssCDATA `xml:"description"`
+	PubDate     string   `xml:"pubDate"`
+}
+
+// rssCDATA wraps content in CDATA.
+type rssCDATA struct {
+	Content string `xml:",cdata"`
+}
+
+// rssFeed represents the root RSS element.
+type rssFeed struct {
+	XMLName xml.Name   `xml:"rss"`
+	Version string     `xml:"version,attr"`
+	Channel rssChannel `xml:"channel"`
+}
+
+// RenderFeed renders an RSS 2.0 feed for blog posts.
+func (r *Renderer) RenderFeed(site model.Site, posts []model.Post) (string, error) {
+	if len(posts) == 0 {
+		return "", nil
+	}
+
+	// Limit to 20 posts
+	feedPosts := posts
+	if len(feedPosts) > 20 {
+		feedPosts = feedPosts[:20]
+	}
+
+	// Build items
+	items := make([]rssItem, len(feedPosts))
+	for i, p := range feedPosts {
+		items[i] = rssItem{
+			Title:       p.Title,
+			Link:        site.BaseURL + "/blog/" + p.Slug + "/",
+			Description: rssCDATA{Content: p.Content},
+			PubDate:     p.Date.Format(time.RFC1123Z),
+		}
+	}
+
+	feed := rssFeed{
+		Version: "2.0",
+		Channel: rssChannel{
+			Title:         site.Title,
+			Link:          site.BaseURL,
+			Description:   site.Description,
+			LastBuildDate: time.Now().UTC().Format(time.RFC1123Z),
+			Items:         items,
+		},
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
+
+	enc := xml.NewEncoder(&buf)
+	enc.Indent("", "  ")
+	if err := enc.Encode(feed); err != nil {
+		return "", err
+	}
+
 	return buf.String(), nil
 }

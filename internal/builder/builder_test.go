@@ -530,3 +530,113 @@ func TestBuild_GeneratesBlogListing(t *testing.T) {
 		t.Error("Build() blog listing does not contain second post")
 	}
 }
+
+func TestScanContent_DescriptionFromConfig(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	cfg := &model.Config{
+		Title:       "Test Site",
+		BaseURL:     "https://example.com",
+		Description: "A blog about testing",
+		ContentDir:  dir,
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	if site.Description != "A blog about testing" {
+		t.Errorf("Site.Description = %q, want %q", site.Description, "A blog about testing")
+	}
+}
+
+func TestScanContent_DescriptionFallsBackToTitle(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	cfg := &model.Config{
+		Title:       "Test Site",
+		BaseURL:     "https://example.com",
+		Description: "", // empty description
+		ContentDir:  dir,
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	if site.Description != "Test Site" {
+		t.Errorf("Site.Description = %q, want fallback to Title %q", site.Description, "Test Site")
+	}
+}
+
+func TestBuild_GeneratesRSSFeed(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	os.MkdirAll(filepath.Join(contentDir, "blog"), 0755)
+	writeFile(t, filepath.Join(contentDir, "blog", "2021-03-26-first-post.md"),
+		"---\ntitle: First Post\n---\nFirst content")
+
+	cfg := &model.Config{
+		Title:       "Test Site",
+		BaseURL:     "https://example.com",
+		Description: "A test blog",
+		ContentDir:  contentDir,
+		OutputDir:   outputDir,
+	}
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	feedPath := filepath.Join(outputDir, "feed", "index.xml")
+	if _, err := os.Stat(feedPath); os.IsNotExist(err) {
+		t.Errorf("Build() did not generate feed/index.xml at %s", feedPath)
+	}
+
+	content, err := os.ReadFile(feedPath)
+	if err != nil {
+		t.Fatalf("failed to read feed: %v", err)
+	}
+	if !strings.Contains(string(content), "<rss") {
+		t.Error("Build() feed does not contain RSS element")
+	}
+	if !strings.Contains(string(content), "First Post") {
+		t.Error("Build() feed does not contain post title")
+	}
+}
+
+func TestBuild_SkipsFeedWhenNoPosts(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	feedPath := filepath.Join(outputDir, "feed", "index.xml")
+	if _, err := os.Stat(feedPath); !os.IsNotExist(err) {
+		t.Errorf("Build() should not create feed when no posts exist")
+	}
+}

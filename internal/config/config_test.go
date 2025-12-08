@@ -220,3 +220,46 @@ func TestLoad_WithoutLogo(t *testing.T) {
 		t.Errorf("Logo = %q, want empty string", cfg.Logo)
 	}
 }
+
+func TestLoad_WithDescription(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+  description: "A blog about testing"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Description != "A blog about testing" {
+		t.Errorf("Description = %q, want %q", cfg.Description, "A blog about testing")
+	}
+}
+
+func TestLoad_WithoutDescription(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Description != "" {
+		t.Errorf("Description = %q, want empty string", cfg.Description)
+	}
+}

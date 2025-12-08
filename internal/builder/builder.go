@@ -30,13 +30,19 @@ func (b *Builder) SetAssetsDir(dir string) {
 
 // ScanContent scans the content directory and returns a Site with all pages and posts.
 func (b *Builder) ScanContent() (*model.Site, error) {
+	description := b.cfg.Description
+	if description == "" {
+		description = b.cfg.Title
+	}
+
 	site := &model.Site{
-		Title:      b.cfg.Title,
-		BaseURL:    b.cfg.BaseURL,
-		Author:     b.cfg.Author,
-		Logo:       b.cfg.Logo,
-		Favicon:    b.cfg.Favicon,
-		Navigation: b.cfg.Navigation,
+		Title:       b.cfg.Title,
+		Description: description,
+		BaseURL:     b.cfg.BaseURL,
+		Author:      b.cfg.Author,
+		Logo:        b.cfg.Logo,
+		Favicon:     b.cfg.Favicon,
+		Navigation:  b.cfg.Navigation,
 	}
 
 	// Check if content directory exists
@@ -155,6 +161,11 @@ func (b *Builder) Build() error {
 		}
 	}
 
+	// Generate RSS feed
+	if err := b.writeFeed(r, *site); err != nil {
+		return err
+	}
+
 	// Generate homepage
 	if err := b.writeHomepage(r, *site); err != nil {
 		return err
@@ -231,6 +242,26 @@ func (b *Builder) writeBlogListing(r *renderer.Renderer, site model.Site) error 
 	}
 
 	return os.WriteFile(filepath.Join(dir, "index.html"), []byte(html), 0644)
+}
+
+// writeFeed writes the RSS feed.
+func (b *Builder) writeFeed(r *renderer.Renderer, site model.Site) error {
+	xml, err := r.RenderFeed(site, site.Posts)
+	if err != nil {
+		return err
+	}
+
+	// Skip if no posts (RenderFeed returns empty string)
+	if xml == "" {
+		return nil
+	}
+
+	dir := filepath.Join(b.cfg.OutputDir, "feed")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	return os.WriteFile(filepath.Join(dir, "index.xml"), []byte(xml), 0644)
 }
 
 // writeHomepage writes the homepage.

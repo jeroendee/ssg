@@ -571,3 +571,225 @@ func TestRenderBase_WithoutFavicon(t *testing.T) {
 		t.Error("RenderBase() should not render favicon link when Favicon is empty")
 	}
 }
+
+func TestRenderFeed_EmptyPosts(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "A test site",
+		BaseURL:     "https://example.com",
+	}
+
+	got, err := r.RenderFeed(site, nil)
+	if err != nil {
+		t.Fatalf("RenderFeed() error = %v", err)
+	}
+
+	if got != "" {
+		t.Errorf("RenderFeed() with no posts = %q, want empty string", got)
+	}
+}
+
+func TestRenderFeed_ValidRSSStructure(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Quality Shepherd",
+		Description: "A blog about testing",
+		BaseURL:     "https://www.qualityshepherd.nl",
+	}
+	posts := []model.Post{
+		{
+			Page: model.Page{
+				Title:   "First Post",
+				Slug:    "first-post",
+				Content: "<p>Hello world</p>",
+			},
+			Date: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+		},
+	}
+
+	got, err := r.RenderFeed(site, posts)
+	if err != nil {
+		t.Fatalf("RenderFeed() error = %v", err)
+	}
+
+	// Check XML declaration
+	if !strings.Contains(got, `<?xml version="1.0" encoding="UTF-8"?>`) {
+		t.Error("RenderFeed() missing XML declaration")
+	}
+
+	// Check RSS root element
+	if !strings.Contains(got, `<rss version="2.0">`) {
+		t.Error("RenderFeed() missing RSS root element")
+	}
+
+	// Check channel info
+	if !strings.Contains(got, "<channel>") {
+		t.Error("RenderFeed() missing channel element")
+	}
+	if !strings.Contains(got, "<title>Quality Shepherd</title>") {
+		t.Error("RenderFeed() missing channel title")
+	}
+	if !strings.Contains(got, "<description>A blog about testing</description>") {
+		t.Error("RenderFeed() missing channel description")
+	}
+	if !strings.Contains(got, "<link>https://www.qualityshepherd.nl</link>") {
+		t.Error("RenderFeed() missing channel link")
+	}
+}
+
+func TestRenderFeed_AbsoluteURLs(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "A test site",
+		BaseURL:     "https://example.com",
+	}
+	posts := []model.Post{
+		{
+			Page: model.Page{
+				Title:   "Test Post",
+				Slug:    "test-post",
+				Content: "<p>Content</p>",
+			},
+			Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	got, err := r.RenderFeed(site, posts)
+	if err != nil {
+		t.Fatalf("RenderFeed() error = %v", err)
+	}
+
+	// Check absolute URL in item
+	if !strings.Contains(got, "<link>https://example.com/blog/test-post/</link>") {
+		t.Error("RenderFeed() item should have absolute URL")
+	}
+}
+
+func TestRenderFeed_RFC822DateFormat(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "A test site",
+		BaseURL:     "https://example.com",
+	}
+	posts := []model.Post{
+		{
+			Page: model.Page{
+				Title:   "Test Post",
+				Slug:    "test-post",
+				Content: "<p>Content</p>",
+			},
+			Date: time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC),
+		},
+	}
+
+	got, err := r.RenderFeed(site, posts)
+	if err != nil {
+		t.Fatalf("RenderFeed() error = %v", err)
+	}
+
+	// Check RFC 822 date format in pubDate
+	if !strings.Contains(got, "<pubDate>Mon, 15 Jan 2024 10:30:00 +0000</pubDate>") {
+		t.Errorf("RenderFeed() should use RFC 822 date format, got:\n%s", got)
+	}
+}
+
+func TestRenderFeed_CDATAContent(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "A test site",
+		BaseURL:     "https://example.com",
+	}
+	posts := []model.Post{
+		{
+			Page: model.Page{
+				Title:   "Test Post",
+				Slug:    "test-post",
+				Content: "<p>HTML content with <strong>tags</strong></p>",
+			},
+			Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	got, err := r.RenderFeed(site, posts)
+	if err != nil {
+		t.Fatalf("RenderFeed() error = %v", err)
+	}
+
+	// Check HTML content is wrapped in CDATA
+	if !strings.Contains(got, "<![CDATA[<p>HTML content with <strong>tags</strong></p>]]>") {
+		t.Errorf("RenderFeed() should wrap HTML content in CDATA, got:\n%s", got)
+	}
+}
+
+func TestRenderFeed_Max20Posts(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "A test site",
+		BaseURL:     "https://example.com",
+	}
+
+	// Create 25 posts
+	posts := make([]model.Post, 25)
+	for i := 0; i < 25; i++ {
+		posts[i] = model.Post{
+			Page: model.Page{
+				Title:   "Post",
+				Slug:    "post",
+				Content: "<p>Content</p>",
+			},
+			Date: time.Date(2024, 1, i+1, 0, 0, 0, 0, time.UTC),
+		}
+	}
+
+	got, err := r.RenderFeed(site, posts)
+	if err != nil {
+		t.Fatalf("RenderFeed() error = %v", err)
+	}
+
+	// Count <item> occurrences
+	itemCount := strings.Count(got, "<item>")
+	if itemCount != 20 {
+		t.Errorf("RenderFeed() should limit to 20 items, got %d", itemCount)
+	}
+}

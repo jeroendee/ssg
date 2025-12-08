@@ -30,26 +30,28 @@ type Post struct {
 
 // Site represents the complete site with all pages and posts.
 type Site struct {
-	Title      string
-	BaseURL    string
-	Author     string
-	Logo       string
-	Favicon    string
-	Navigation []NavItem
-	Pages      []Page
-	Posts      []Post
+	Title       string
+	Description string
+	BaseURL     string
+	Author      string
+	Logo        string
+	Favicon     string
+	Navigation  []NavItem
+	Pages       []Page
+	Posts       []Post
 }
 
 // Config holds site configuration loaded from ssg.yaml.
 type Config struct {
-	Title      string
-	BaseURL    string
-	Author     string
-	Logo       string
-	Favicon    string
-	ContentDir string
-	OutputDir  string
-	Navigation []NavItem
+	Title       string
+	Description string
+	BaseURL     string
+	Author      string
+	Logo        string
+	Favicon     string
+	ContentDir  string
+	OutputDir   string
+	Navigation  []NavItem
 }
 
 // FaviconMIMEType returns the MIME type for the favicon based on file extension.
