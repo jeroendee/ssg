@@ -5,7 +5,7 @@ PORT ?= 8080
 DEV_DIR ?= dev
 BIN_DIR ?= bin
 
-.PHONY: all test test-v test-cover build install serve serve-only kill assets fmt vet lint clean dev help
+.PHONY: all test test-v test-cover build install serve serve-only kill assets fmt vet lint clean dev help changelog
 
 # Composite targets
 all: fmt vet test build
@@ -83,8 +83,21 @@ help:
 	@echo "    vet       - Run go vet"
 	@echo "    lint      - Run staticcheck"
 	@echo "    clean     - Remove build artifacts"
+	@echo "    changelog - Generate CHANGELOG.md from bd issues"
 	@echo ""
 	@echo "  Variables (override with VAR=value):"
 	@echo "    PORT      - Server port (default: 8080)"
 	@echo "    DEV_DIR   - Development directory (default: dev)"
 	@echo "    BIN_DIR   - Binary output directory (default: bin)"
+
+# Changelog generation
+changelog:
+	@echo "# Changelog" > CHANGELOG.md
+	@echo "" >> CHANGELOG.md
+	@echo "## [Unreleased]" >> CHANGELOG.md
+	@echo "" >> CHANGELOG.md
+	@echo "### Added" >> CHANGELOG.md
+	@bd export --status=closed --type=feature 2>/dev/null | jq -r '"- " + .title + " (" + .id + ")"' >> CHANGELOG.md || echo "- None" >> CHANGELOG.md
+	@echo "" >> CHANGELOG.md
+	@echo "### Fixed" >> CHANGELOG.md
+	@bd export --status=closed --type=bug 2>/dev/null | jq -r '"- " + .title + " (" + .id + ")"' >> CHANGELOG.md || echo "- None" >> CHANGELOG.md
