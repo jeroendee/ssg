@@ -29,16 +29,24 @@ func New() (*Renderer, error) {
 
 // baseData holds data for base template rendering.
 type baseData struct {
-	Site      model.Site
-	PageTitle string
-	Content   template.HTML
+	Site         model.Site
+	PageTitle    string
+	CanonicalURL string
+	Summary      string
+	IsPost       bool
+	OGImage      string
+	Content      template.HTML
 }
 
 // pageData holds data for page template rendering.
 type pageData struct {
-	Site      model.Site
-	PageTitle string
-	Page      struct {
+	Site         model.Site
+	PageTitle    string
+	CanonicalURL string
+	Summary      string
+	IsPost       bool
+	OGImage      string
+	Page         struct {
 		Title   string
 		Content template.HTML
 	}
@@ -53,16 +61,25 @@ type blogPostItem struct {
 
 // blogListData holds data for blog list template rendering.
 type blogListData struct {
-	Site      model.Site
-	PageTitle string
-	Posts     []blogPostItem
+	Site         model.Site
+	PageTitle    string
+	CanonicalURL string
+	Summary      string
+	IsPost       bool
+	OGImage      string
+	Posts        []blogPostItem
 }
 
 // blogPostData holds data for blog post template rendering.
 type blogPostData struct {
-	Site      model.Site
-	PageTitle string
-	Post      struct {
+	Site          model.Site
+	PageTitle     string
+	CanonicalURL  string
+	Summary       string
+	IsPost        bool
+	OGImage       string
+	DatePublished string
+	Post          struct {
 		Title         string
 		DateFormatted string
 		Content       template.HTML
@@ -86,8 +103,12 @@ func (r *Renderer) RenderBase(site model.Site, content string) (string, error) {
 // RenderPage renders a static page with the page template.
 func (r *Renderer) RenderPage(site model.Site, page model.Page) (string, error) {
 	data := pageData{
-		Site:      site,
-		PageTitle: page.Title,
+		Site:         site,
+		PageTitle:    page.Title,
+		CanonicalURL: site.BaseURL + "/" + page.Slug + "/",
+		Summary:      site.Description,
+		IsPost:       false,
+		OGImage:      ogImageURL(site),
 	}
 	data.Page.Title = page.Title
 	data.Page.Content = template.HTML(page.Content)
@@ -97,6 +118,14 @@ func (r *Renderer) RenderPage(site model.Site, page model.Page) (string, error) 
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+// ogImageURL returns the absolute URL for OG image, using site logo as fallback.
+func ogImageURL(site model.Site) string {
+	if site.Logo == "" {
+		return ""
+	}
+	return site.BaseURL + site.Logo
 }
 
 // RenderBlogList renders the blog listing page with all posts.
@@ -111,9 +140,13 @@ func (r *Renderer) RenderBlogList(site model.Site, posts []model.Post) (string, 
 	}
 
 	data := blogListData{
-		Site:      site,
-		PageTitle: "Blog",
-		Posts:     items,
+		Site:         site,
+		PageTitle:    "Blog",
+		CanonicalURL: site.BaseURL + "/blog/",
+		Summary:      site.Description,
+		IsPost:       false,
+		OGImage:      ogImageURL(site),
+		Posts:        items,
 	}
 
 	var buf bytes.Buffer
@@ -125,9 +158,18 @@ func (r *Renderer) RenderBlogList(site model.Site, posts []model.Post) (string, 
 
 // RenderBlogPost renders a single blog post.
 func (r *Renderer) RenderBlogPost(site model.Site, post model.Post) (string, error) {
+	summary := post.Summary
+	if summary == "" {
+		summary = site.Description
+	}
 	data := blogPostData{
-		Site:      site,
-		PageTitle: post.Title,
+		Site:          site,
+		PageTitle:     post.Title,
+		CanonicalURL:  site.BaseURL + "/blog/" + post.Slug + "/",
+		Summary:       summary,
+		IsPost:        true,
+		OGImage:       ogImageURL(site),
+		DatePublished: post.Date.Format("2006-01-02"),
 	}
 	data.Post.Title = post.Title
 	data.Post.DateFormatted = post.Date.Format("2006-01-02")
@@ -142,14 +184,22 @@ func (r *Renderer) RenderBlogPost(site model.Site, post model.Post) (string, err
 
 // homeData holds data for home page template rendering.
 type homeData struct {
-	Site      model.Site
-	PageTitle string
+	Site         model.Site
+	PageTitle    string
+	CanonicalURL string
+	Summary      string
+	IsPost       bool
+	OGImage      string
 }
 
 // RenderHome renders the homepage.
 func (r *Renderer) RenderHome(site model.Site) (string, error) {
 	data := homeData{
-		Site: site,
+		Site:         site,
+		CanonicalURL: site.BaseURL + "/",
+		Summary:      site.Description,
+		IsPost:       false,
+		OGImage:      ogImageURL(site),
 	}
 
 	var buf bytes.Buffer
@@ -161,15 +211,21 @@ func (r *Renderer) RenderHome(site model.Site) (string, error) {
 
 // notFoundData holds data for 404 page template rendering.
 type notFoundData struct {
-	Site      model.Site
-	PageTitle string
+	Site         model.Site
+	PageTitle    string
+	CanonicalURL string
+	Summary      string
+	IsPost       bool
+	OGImage      string
 }
 
 // Render404 renders the 404 error page.
 func (r *Renderer) Render404(site model.Site) (string, error) {
 	data := notFoundData{
-		Site:      site,
-		PageTitle: "Page Not Found",
+		Site:         site,
+		PageTitle:    "Page Not Found",
+		CanonicalURL: site.BaseURL + "/404/",
+		Summary:      site.Description,
 	}
 
 	var buf bytes.Buffer

@@ -5,9 +5,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{if .PageTitle}}{{.PageTitle}} - {{end}}{{.Site.Title}}</title>
+    {{if .Summary}}<meta name="description" content="{{.Summary}}">{{end}}
+    {{if .CanonicalURL}}<link rel="canonical" href="{{.CanonicalURL}}">{{end}}
     <link rel="stylesheet" href="/style.css">
     {{if .Site.Favicon}}<link rel="icon" href="{{.Site.Favicon}}" type="{{.Site.FaviconMIMEType}}">{{end}}
     <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed/">
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="{{if .PageTitle}}{{.PageTitle}}{{else}}{{.Site.Title}}{{end}}">
+    {{if .Summary}}<meta property="og:description" content="{{.Summary}}">{{end}}
+    {{if .CanonicalURL}}<meta property="og:url" content="{{.CanonicalURL}}">{{end}}
+    <meta property="og:type" content="{{if .IsPost}}article{{else}}website{{end}}">
+    <meta property="og:site_name" content="{{.Site.Title}}">
+    {{if .OGImage}}<meta property="og:image" content="{{.OGImage}}">{{end}}
+    <!-- Twitter Card tags -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{if .PageTitle}}{{.PageTitle}}{{else}}{{.Site.Title}}{{end}}">
+    {{if .Summary}}<meta name="twitter:description" content="{{.Summary}}">{{end}}
+    {{if .OGImage}}<meta name="twitter:image" content="{{.OGImage}}">{{end}}
+    <!-- JSON-LD structured data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "{{.Site.Title}}",
+        "url": "{{.Site.BaseURL}}",
+        "description": "{{.Site.Description}}"
+    }
+    </script>
+    {{if .IsPost}}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "{{.PageTitle}}",
+        "datePublished": "{{.DatePublished}}",
+        "author": {
+            "@type": "Person",
+            "name": "{{.Site.Author}}"
+        },
+        "description": "{{.Summary}}"
+    }
+    </script>
+    {{end}}
 </head>
 <body>
 {{end}}

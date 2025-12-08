@@ -793,3 +793,629 @@ func TestRenderFeed_Max20Posts(t *testing.T) {
 		t.Errorf("RenderFeed() should limit to 20 items, got %d", itemCount)
 	}
 }
+
+func TestRenderHome_CanonicalURL(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+
+	got, err := r.RenderHome(site)
+	if err != nil {
+		t.Fatalf("RenderHome() error = %v", err)
+	}
+
+	// Check canonical URL is available (homepage = BaseURL + "/")
+	wantCanonical := "https://example.com/"
+	if !strings.Contains(got, wantCanonical) {
+		t.Errorf("RenderHome() should expose canonical URL %q", wantCanonical)
+	}
+}
+
+func TestRenderPage_CanonicalURL(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+	page := model.Page{
+		Title: "About",
+		Slug:  "about",
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	// Check canonical URL (page = BaseURL + "/" + slug + "/")
+	wantCanonical := "https://example.com/about/"
+	if !strings.Contains(got, wantCanonical) {
+		t.Errorf("RenderPage() should expose canonical URL %q", wantCanonical)
+	}
+}
+
+func TestRenderBlogList_CanonicalURL(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+
+	got, err := r.RenderBlogList(site, nil)
+	if err != nil {
+		t.Fatalf("RenderBlogList() error = %v", err)
+	}
+
+	// Check canonical URL (blog list = BaseURL + "/blog/")
+	wantCanonical := "https://example.com/blog/"
+	if !strings.Contains(got, wantCanonical) {
+		t.Errorf("RenderBlogList() should expose canonical URL %q", wantCanonical)
+	}
+}
+
+func TestRenderBlogPost_CanonicalURL(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+	post := model.Post{
+		Page: model.Page{
+			Title: "My Post",
+			Slug:  "my-post",
+		},
+		Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+	}
+
+	got, err := r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+
+	// Check canonical URL (blog post = BaseURL + "/blog/" + slug + "/")
+	wantCanonical := "https://example.com/blog/my-post/"
+	if !strings.Contains(got, wantCanonical) {
+		t.Errorf("RenderBlogPost() should expose canonical URL %q", wantCanonical)
+	}
+}
+
+func TestRender404_CanonicalURL(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+
+	got, err := r.Render404(site)
+	if err != nil {
+		t.Fatalf("Render404() error = %v", err)
+	}
+
+	// Check canonical URL (404 = BaseURL + "/404/")
+	wantCanonical := "https://example.com/404/"
+	if !strings.Contains(got, wantCanonical) {
+		t.Errorf("Render404() should expose canonical URL %q", wantCanonical)
+	}
+}
+
+func TestRenderBlogPost_MetaDescription(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "Site description fallback",
+		BaseURL:     "https://example.com",
+	}
+	post := model.Post{
+		Page: model.Page{
+			Title:   "My Post",
+			Slug:    "my-post",
+			Content: "<p>Post content</p>",
+		},
+		Date:    time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+		Summary: "This is the post summary",
+	}
+
+	got, err := r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+
+	// Blog post should use Summary for meta description
+	wantMeta := `<meta name="description" content="This is the post summary">`
+	if !strings.Contains(got, wantMeta) {
+		t.Errorf("RenderBlogPost() should have meta description with summary, got:\n%s", got)
+	}
+}
+
+func TestRenderBlogPost_MetaDescription_FallbackToSiteDescription(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "Site description fallback",
+		BaseURL:     "https://example.com",
+	}
+	post := model.Post{
+		Page: model.Page{
+			Title:   "My Post",
+			Slug:    "my-post",
+			Content: "<p>Post content</p>",
+		},
+		Date:    time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+		Summary: "", // No summary
+	}
+
+	got, err := r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+
+	// Should fallback to site description when no summary
+	wantMeta := `<meta name="description" content="Site description fallback">`
+	if !strings.Contains(got, wantMeta) {
+		t.Errorf("RenderBlogPost() should fallback to site description, got:\n%s", got)
+	}
+}
+
+func TestRenderPage_MetaDescription(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "Site description for pages",
+		BaseURL:     "https://example.com",
+	}
+	page := model.Page{
+		Title:   "About",
+		Slug:    "about",
+		Content: "<p>About content</p>",
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	// Pages should use site description
+	wantMeta := `<meta name="description" content="Site description for pages">`
+	if !strings.Contains(got, wantMeta) {
+		t.Errorf("RenderPage() should have meta description with site description, got:\n%s", got)
+	}
+}
+
+func TestRenderHome_MetaDescription(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "Homepage site description",
+		BaseURL:     "https://example.com",
+	}
+
+	got, err := r.RenderHome(site)
+	if err != nil {
+		t.Fatalf("RenderHome() error = %v", err)
+	}
+
+	// Home should use site description
+	wantMeta := `<meta name="description" content="Homepage site description">`
+	if !strings.Contains(got, wantMeta) {
+		t.Errorf("RenderHome() should have meta description with site description, got:\n%s", got)
+	}
+}
+
+func TestRenderBlogPost_OpenGraphTags(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Quality Shepherd",
+		Description: "A blog about testing",
+		BaseURL:     "https://www.qualityshepherd.nl",
+		Logo:        "/logo.svg",
+	}
+	post := model.Post{
+		Page: model.Page{
+			Title:   "My Test Post",
+			Slug:    "my-test-post",
+			Content: "<p>Post content</p>",
+		},
+		Date:    time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+		Summary: "This is the post summary",
+	}
+
+	got, err := r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+
+	// Check og:title
+	if !strings.Contains(got, `<meta property="og:title" content="My Test Post">`) {
+		t.Error("RenderBlogPost() missing og:title")
+	}
+
+	// Check og:description
+	if !strings.Contains(got, `<meta property="og:description" content="This is the post summary">`) {
+		t.Error("RenderBlogPost() missing og:description")
+	}
+
+	// Check og:url
+	if !strings.Contains(got, `<meta property="og:url" content="https://www.qualityshepherd.nl/blog/my-test-post/">`) {
+		t.Error("RenderBlogPost() missing og:url")
+	}
+
+	// Check og:type (article for blog posts)
+	if !strings.Contains(got, `<meta property="og:type" content="article">`) {
+		t.Error("RenderBlogPost() should have og:type=article")
+	}
+
+	// Check og:site_name
+	if !strings.Contains(got, `<meta property="og:site_name" content="Quality Shepherd">`) {
+		t.Error("RenderBlogPost() missing og:site_name")
+	}
+
+	// Check og:image (uses site logo as fallback)
+	if !strings.Contains(got, `<meta property="og:image" content="https://www.qualityshepherd.nl/logo.svg">`) {
+		t.Error("RenderBlogPost() missing og:image")
+	}
+}
+
+func TestRenderPage_OpenGraphTags(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Quality Shepherd",
+		Description: "A blog about testing",
+		BaseURL:     "https://www.qualityshepherd.nl",
+		Logo:        "/logo.svg",
+	}
+	page := model.Page{
+		Title:   "About",
+		Slug:    "about",
+		Content: "<p>About content</p>",
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	// Check og:title
+	if !strings.Contains(got, `<meta property="og:title" content="About">`) {
+		t.Error("RenderPage() missing og:title")
+	}
+
+	// Check og:type (website for pages)
+	if !strings.Contains(got, `<meta property="og:type" content="website">`) {
+		t.Error("RenderPage() should have og:type=website")
+	}
+
+	// Check og:site_name
+	if !strings.Contains(got, `<meta property="og:site_name" content="Quality Shepherd">`) {
+		t.Error("RenderPage() missing og:site_name")
+	}
+}
+
+func TestRenderHome_OpenGraphTags(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Quality Shepherd",
+		Description: "A blog about testing",
+		BaseURL:     "https://www.qualityshepherd.nl",
+		Logo:        "/logo.svg",
+	}
+
+	got, err := r.RenderHome(site)
+	if err != nil {
+		t.Fatalf("RenderHome() error = %v", err)
+	}
+
+	// Check og:title (falls back to Site.Title when no PageTitle)
+	if !strings.Contains(got, `<meta property="og:title" content="Quality Shepherd">`) {
+		t.Error("RenderHome() missing og:title")
+	}
+
+	// Check og:type (website for homepage)
+	if !strings.Contains(got, `<meta property="og:type" content="website">`) {
+		t.Error("RenderHome() should have og:type=website")
+	}
+}
+
+func TestRenderBlogPost_TwitterCardTags(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Quality Shepherd",
+		Description: "A blog about testing",
+		BaseURL:     "https://www.qualityshepherd.nl",
+		Logo:        "/logo.svg",
+	}
+	post := model.Post{
+		Page: model.Page{
+			Title:   "My Test Post",
+			Slug:    "my-test-post",
+			Content: "<p>Post content</p>",
+		},
+		Date:    time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+		Summary: "This is the post summary",
+	}
+
+	got, err := r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+
+	// Check twitter:card
+	if !strings.Contains(got, `<meta name="twitter:card" content="summary">`) {
+		t.Error("RenderBlogPost() missing twitter:card")
+	}
+
+	// Check twitter:title
+	if !strings.Contains(got, `<meta name="twitter:title" content="My Test Post">`) {
+		t.Error("RenderBlogPost() missing twitter:title")
+	}
+
+	// Check twitter:description
+	if !strings.Contains(got, `<meta name="twitter:description" content="This is the post summary">`) {
+		t.Error("RenderBlogPost() missing twitter:description")
+	}
+
+	// Check twitter:image (uses site logo as fallback)
+	if !strings.Contains(got, `<meta name="twitter:image" content="https://www.qualityshepherd.nl/logo.svg">`) {
+		t.Error("RenderBlogPost() missing twitter:image")
+	}
+}
+
+func TestRenderPage_TwitterCardTags(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Quality Shepherd",
+		Description: "A blog about testing",
+		BaseURL:     "https://www.qualityshepherd.nl",
+		Logo:        "/logo.svg",
+	}
+	page := model.Page{
+		Title:   "About",
+		Slug:    "about",
+		Content: "<p>About content</p>",
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	// Check twitter:card
+	if !strings.Contains(got, `<meta name="twitter:card" content="summary">`) {
+		t.Error("RenderPage() missing twitter:card")
+	}
+
+	// Check twitter:title
+	if !strings.Contains(got, `<meta name="twitter:title" content="About">`) {
+		t.Error("RenderPage() missing twitter:title")
+	}
+}
+
+func TestRenderHome_JSONLDWebSiteSchema(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Quality Shepherd",
+		Description: "A blog about testing",
+		BaseURL:     "https://www.qualityshepherd.nl",
+	}
+
+	got, err := r.RenderHome(site)
+	if err != nil {
+		t.Fatalf("RenderHome() error = %v", err)
+	}
+
+	// Check JSON-LD script tag exists
+	if !strings.Contains(got, `<script type="application/ld+json">`) {
+		t.Error("RenderHome() missing JSON-LD script tag")
+	}
+
+	// Check WebSite schema type
+	if !strings.Contains(got, `"@type": "WebSite"`) {
+		t.Error("RenderHome() missing WebSite @type in JSON-LD")
+	}
+
+	// Check name
+	if !strings.Contains(got, `"name": "Quality Shepherd"`) {
+		t.Error("RenderHome() missing name in WebSite JSON-LD")
+	}
+
+	// Check url (html/template escapes / to \/ in script tags)
+	if !strings.Contains(got, `"url": "https:\/\/www.qualityshepherd.nl"`) {
+		t.Errorf("RenderHome() missing url in WebSite JSON-LD, got:\n%s", got)
+	}
+
+	// Check description
+	if !strings.Contains(got, `"description": "A blog about testing"`) {
+		t.Error("RenderHome() missing description in WebSite JSON-LD")
+	}
+
+	// Homepage should NOT have Article schema
+	if strings.Contains(got, `"@type": "Article"`) {
+		t.Error("RenderHome() should NOT have Article schema")
+	}
+}
+
+func TestRenderPage_JSONLDNoArticleSchema(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Quality Shepherd",
+		Description: "A blog about testing",
+		BaseURL:     "https://www.qualityshepherd.nl",
+	}
+	page := model.Page{
+		Title:   "About",
+		Slug:    "about",
+		Content: "<p>About content</p>",
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	// Check WebSite schema exists
+	if !strings.Contains(got, `"@type": "WebSite"`) {
+		t.Error("RenderPage() missing WebSite @type in JSON-LD")
+	}
+
+	// Regular pages should NOT have Article schema
+	if strings.Contains(got, `"@type": "Article"`) {
+		t.Error("RenderPage() should NOT have Article schema")
+	}
+}
+
+func TestRenderBlogPost_JSONLDArticleSchema(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Quality Shepherd",
+		Description: "A blog about testing",
+		BaseURL:     "https://www.qualityshepherd.nl",
+		Author:      "Jeroen",
+	}
+	post := model.Post{
+		Page: model.Page{
+			Title:   "My Test Post",
+			Slug:    "my-test-post",
+			Content: "<p>Post content</p>",
+		},
+		Date:    time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+		Summary: "This is the post summary",
+	}
+
+	got, err := r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+
+	// Check JSON-LD script tag exists
+	if !strings.Contains(got, `<script type="application/ld+json">`) {
+		t.Error("RenderBlogPost() missing JSON-LD script tag")
+	}
+
+	// Check Article schema type
+	if !strings.Contains(got, `"@type": "Article"`) {
+		t.Error("RenderBlogPost() missing Article @type in JSON-LD")
+	}
+
+	// Check headline
+	if !strings.Contains(got, `"headline": "My Test Post"`) {
+		t.Error("RenderBlogPost() missing headline in Article JSON-LD")
+	}
+
+	// Check datePublished
+	if !strings.Contains(got, `"datePublished": "2024-01-15"`) {
+		t.Error("RenderBlogPost() missing datePublished in Article JSON-LD")
+	}
+
+	// Check author
+	if !strings.Contains(got, `"author"`) && !strings.Contains(got, `"Jeroen"`) {
+		t.Error("RenderBlogPost() missing author in Article JSON-LD")
+	}
+
+	// Check description
+	if !strings.Contains(got, `"description": "This is the post summary"`) {
+		t.Error("RenderBlogPost() missing description in Article JSON-LD")
+	}
+}
