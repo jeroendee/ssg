@@ -49,14 +49,12 @@ header .logo {
 }
 
 .site-title {
-  font-size: 1.8rem;
   font-weight: bold;
   text-decoration: none;
   display: block;
 }
 
 .site-title h2 {
-  font-size: inherit;
   margin: 0;
 }
 
