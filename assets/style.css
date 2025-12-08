@@ -150,7 +150,7 @@ ul.blog-list li a:visited {
 /* Blog post date styling */
 .date {
   color: #777;
-  font-size: small;
+  font-style: italic;
 }
 
 /* Dark mode support */
