@@ -13,6 +13,7 @@ A minimal static site generator for blogs, written in Go.
 - Asset copying (CSS, images, etc.)
 - Auto-generated homepage, blog listing, and 404 page
 - RSS 2.0 feed generation for blog posts
+- Dark mode support (automatic via `prefers-color-scheme`)
 - Development server for local preview
 
 ## Installation
@@ -114,6 +115,21 @@ ssg serve --dir ./other-dir   # Serve a specific directory
 
 Press `Ctrl+C` to stop the server.
 
+## Makefile
+
+Common development tasks are available via `make`:
+
+| Target | Description |
+|--------|-------------|
+| `make all` | Run fmt, vet, test, build (CI pipeline) |
+| `make dev` | Quick restart: kill server, copy assets, serve |
+| `make serve` | Full workflow: kill, assets, build, serve |
+| `make test` | Run tests |
+| `make lint` | Run staticcheck |
+| `make clean` | Remove build artifacts |
+
+Override defaults: `make serve PORT=3000`
+
 ## Content Format
 
 ### Pages
@@ -162,12 +178,24 @@ The date is extracted from the filename: `2024-01-15-my-first-post.md` → publi
 
 An RSS 2.0 feed is automatically generated at `/feed/index.xml` containing the 20 most recent blog posts. The feed uses `site.description` if provided.
 
+## SEO
+
+The following SEO features are automatically generated:
+
+- **Sitemap** - `sitemap.xml` at the site root with all pages and blog posts
+- **robots.txt** - Allows all crawlers and references the sitemap
+- **JSON-LD Structured Data** - WebSite schema on all pages, Article schema on blog posts
+- **Open Graph Tags** - `og:title`, `og:description`, `og:url`, `og:type`, `og:image`
+- **Twitter Cards** - Summary card with title, description, and image
+
 ## Output Structure
 
 ```
 public/
 ├── index.html          # Homepage
 ├── 404.html            # Error page
+├── robots.txt          # Crawler directives
+├── sitemap.xml         # Site map for search engines
 ├── style.css           # Copied from assets/
 ├── feed/
 │   └── index.xml       # RSS feed
