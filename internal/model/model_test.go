@@ -131,3 +131,62 @@ func TestConfig(t *testing.T) {
 		t.Errorf("Config.OutputDir = %q, want %q", cfg.OutputDir, "public")
 	}
 }
+
+func TestSite_FaviconMIMEType(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		favicon string
+		want    string
+	}{
+		{
+			name:    "svg extension returns svg+xml",
+			favicon: "/favicon.svg",
+			want:    "image/svg+xml",
+		},
+		{
+			name:    "ico extension returns x-icon",
+			favicon: "/favicon.ico",
+			want:    "image/x-icon",
+		},
+		{
+			name:    "png extension returns png",
+			favicon: "/favicon.png",
+			want:    "image/png",
+		},
+		{
+			name:    "gif extension returns gif",
+			favicon: "/favicon.gif",
+			want:    "image/gif",
+		},
+		{
+			name:    "unknown extension returns default x-icon",
+			favicon: "/favicon.webp",
+			want:    "image/x-icon",
+		},
+		{
+			name:    "empty favicon returns default x-icon",
+			favicon: "",
+			want:    "image/x-icon",
+		},
+		{
+			name:    "uppercase SVG extension returns svg+xml",
+			favicon: "/favicon.SVG",
+			want:    "image/svg+xml",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			site := model.Site{Favicon: tt.favicon}
+			got := site.FaviconMIMEType()
+
+			if got != tt.want {
+				t.Errorf("Site.FaviconMIMEType() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

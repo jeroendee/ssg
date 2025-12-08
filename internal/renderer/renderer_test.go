@@ -542,9 +542,9 @@ func TestRenderBase_WithFavicon(t *testing.T) {
 		t.Fatalf("RenderBase() error = %v", err)
 	}
 
-	// Check favicon link is rendered
-	if !strings.Contains(got, `<link rel="icon" href="/favicon.svg" type="image/svg+xml">`) {
-		t.Error("RenderBase() should render favicon link when Favicon is set")
+	// Check favicon link is rendered (+ is HTML-escaped to &#43; by html/template)
+	if !strings.Contains(got, `<link rel="icon" href="/favicon.svg" type="image/svg&#43;xml">`) {
+		t.Errorf("RenderBase() should render favicon link when Favicon is set, got:\n%s", got)
 	}
 }
 

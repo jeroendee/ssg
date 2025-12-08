@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"path"
+	"strings"
+	"time"
+)
 
 // NavItem represents a navigation menu entry.
 type NavItem struct {
@@ -46,4 +50,19 @@ type Config struct {
 	ContentDir string
 	OutputDir  string
 	Navigation []NavItem
+}
+
+// FaviconMIMEType returns the MIME type for the favicon based on file extension.
+func (s Site) FaviconMIMEType() string {
+	ext := strings.ToLower(path.Ext(s.Favicon))
+	switch ext {
+	case ".svg":
+		return "image/svg+xml"
+	case ".png":
+		return "image/png"
+	case ".gif":
+		return "image/gif"
+	default:
+		return "image/x-icon"
+	}
 }
