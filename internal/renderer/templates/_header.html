@@ -1,19 +1,17 @@
 {{define "_header.html"}}
 <header>
-    <div class="header-left">
-        <a href="/" class="site-title">
-            <h2>{{.Site.Title}}</h2>
-        </a>
-        <nav>
-            {{range .Site.Navigation}}
-            <a href="{{.URL}}">{{.Title}}</a>
-            {{end}}
-        </nav>
-    </div>
     {{if .Site.Logo}}
-    <div class="header-right">
+    <div class="logo-container">
         <img src="{{.Site.Logo}}" alt="{{.Site.Title}} logo" class="logo" />
     </div>
     {{end}}
+    <a href="/" class="site-title">
+        <h2>{{.Site.Title}}</h2>
+    </a>
+    <nav>
+        {{range .Site.Navigation}}
+        <a href="{{.URL}}">{{.Title}}</a>
+        {{end}}
+    </nav>
 </header>
 {{end}}

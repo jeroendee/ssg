@@ -31,29 +31,30 @@ a {
   font-weight: 400;
 }
 
-/* Header styling - intrinsic responsive using flexbox */
+/* Header styling - float-based responsive layout */
 header {
   padding: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
   margin: -20px -20px 20px -20px;
   width: calc(100% + 40px);
+  overflow: hidden;
 }
 
-.header-left {
-  flex: 1 1 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+.logo-container {
+  float: right;
+  margin-left: 1rem;
+}
+
+header .logo {
+  height: 80px;
+  width: auto;
+  max-width: 100%;
 }
 
 .site-title {
   font-size: 1.8rem;
   font-weight: bold;
   text-decoration: none;
+  display: block;
 }
 
 .site-title h2 {
@@ -61,22 +62,13 @@ header {
   margin: 0;
 }
 
+header nav {
+  margin-top: 8px;
+}
+
 header nav a {
   text-decoration: underline;
   margin-right: 15px;
-}
-
-.header-right {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-}
-
-header .logo {
-  height: 80px;
-  width: auto;
-  max-width: 200px;
-  flex-shrink: 1;
 }
 
 nav a {
