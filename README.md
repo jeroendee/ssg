@@ -12,6 +12,7 @@ A minimal static site generator for blogs, written in Go.
 - Configurable navigation menu
 - Asset copying (CSS, images, etc.)
 - Auto-generated homepage, blog listing, and 404 page
+- RSS 2.0 feed generation for blog posts
 - Development server for local preview
 
 ## Installation
@@ -152,9 +153,14 @@ The date is extracted from the filename: `2024-01-15-my-first-post.md` → publi
 | `site.author` | No | - | Author name for metadata |
 | `site.logo` | No | - | Path to site logo (e.g., `/logo.svg`) |
 | `site.favicon` | No | - | Path to favicon (e.g., `/favicon.svg`) |
+| `site.description` | No | - | Site description for RSS feed |
 | `build.content` | No | `content` | Directory containing markdown files |
 | `build.output` | No | `public` | Directory for generated HTML |
 | `navigation` | No | - | List of navigation menu items |
+
+## RSS Feed
+
+An RSS 2.0 feed is automatically generated at `/feed/index.xml` containing the 20 most recent blog posts. The feed uses `site.description` if provided.
 
 ## Output Structure
 
@@ -163,6 +169,8 @@ public/
 ├── index.html          # Homepage
 ├── 404.html            # Error page
 ├── style.css           # Copied from assets/
+├── feed/
+│   └── index.xml       # RSS feed
 ├── about/
 │   └── index.html      # About page
 └── blog/
