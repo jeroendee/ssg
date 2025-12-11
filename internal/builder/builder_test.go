@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jeroendee/ssg/internal/model"
 )
@@ -254,11 +253,6 @@ func writeFile(t *testing.T, path, content string) {
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
-}
-
-// Helper to compare times
-func timeEqual(t1, t2 time.Time) bool {
-	return t1.Year() == t2.Year() && t1.Month() == t2.Month() && t1.Day() == t2.Day()
 }
 
 func TestBuild_CreatesOutputDirectory(t *testing.T) {
@@ -787,5 +781,76 @@ func TestBuild_SitemapWithNoPosts(t *testing.T) {
 	// Verify page is included
 	if !strings.Contains(sitemapStr, "https://example.com/about/") {
 		t.Error("sitemap.xml missing about page URL")
+	}
+}
+
+func TestSetVersion(t *testing.T) {
+	t.Parallel()
+
+	cfg := &model.Config{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+
+	b := New(cfg)
+	version := "1.2.3"
+	b.SetVersion(version)
+
+	if b.version != version {
+		t.Errorf("SetVersion() version = %q, want %q", b.version, version)
+	}
+}
+
+func TestBuilder_VersionStoredAndRetrievable(t *testing.T) {
+	t.Parallel()
+
+	cfg := &model.Config{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+
+	b := New(cfg)
+	testVersion := "v1.0.0-test"
+	b.SetVersion(testVersion)
+
+	if b.version != testVersion {
+		t.Errorf("Builder.version = %q, want %q", b.version, testVersion)
+	}
+}
+
+func TestBuild_PassesVersionToRenderer(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	writeFile(t, filepath.Join(contentDir, "about.md"), "---\ntitle: About\n---\nAbout content")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	testVersion := "test-version-123"
+	b.SetVersion(testVersion)
+
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	// Read generated HTML
+	pagePath := filepath.Join(outputDir, "about", "index.html")
+	content, err := os.ReadFile(pagePath)
+	if err != nil {
+		t.Fatalf("failed to read page: %v", err)
+	}
+
+	// Version should appear in footer
+	if !strings.Contains(string(content), testVersion) {
+		t.Errorf("Build() page should contain version %q in footer", testVersion)
 	}
 }

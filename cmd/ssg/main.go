@@ -3,8 +3,12 @@
 // Usage:
 //
 //	ssg build [flags]
+//	ssg serve [flags]
+//	ssg version
 //
-// The flags are:
+// Build Command:
+//
+// The build command generates a static website from markdown files.
 //
 //	-c, --config string
 //		Path to config file (default "ssg.yaml")
@@ -14,6 +18,25 @@
 //		Content directory (overrides config)
 //	--assets string
 //		Assets directory (default "assets")
+//
+// Serve Command:
+//
+// The serve command starts a local development server.
+//
+//	-c, --config string
+//		Path to config file (default "ssg.yaml")
+//	-p, --port int
+//		Port to serve on (default 8080)
+//	-d, --dir string
+//		Directory to serve (overrides config output_dir)
+//	-b, --build
+//		Build site before serving
+//
+// Version Command:
+//
+// The version command prints the version information (git commit SHA).
+// Version is injected at build time via -ldflags when using 'make build'.
+// Defaults to "dev" when built without ldflags injection.
 package main
 
 import (
@@ -30,7 +53,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "0.1.0"
+// Version variables set via -ldflags at build time
+var (
+	Version   = "dev"     // Git SHA or version tag
+	BuildDate = "unknown" // Build timestamp
+)
+
+var version = Version // For backward compatibility with cobra
 
 func main() {
 	if err := newRootCmd().Execute(); err != nil {
@@ -49,6 +78,7 @@ func newRootCmd() *cobra.Command {
 
 	rootCmd.AddCommand(newBuildCmd())
 	rootCmd.AddCommand(newServeCmd())
+	rootCmd.AddCommand(newVersionCmd())
 
 	return rootCmd
 }
@@ -95,6 +125,7 @@ func runBuild(configPath, outputDir, contentDir, assetsDir string) error {
 
 	// Create and run builder
 	b := builder.New(cfg)
+	b.SetVersion(Version)
 	b.SetAssetsDir(assetsDir)
 
 	if err := b.Build(); err != nil {
@@ -159,6 +190,7 @@ func runServeWithContext(ctx context.Context, configPath string, port int, dir s
 	// Optionally build first
 	if doBuild {
 		b := builder.New(cfg)
+		b.SetVersion(Version)
 		b.SetAssetsDir("assets")
 		if err := b.Build(); err != nil {
 			return fmt.Errorf("building site: %w", err)
@@ -204,4 +236,18 @@ func runServeWithContext(ctx context.Context, configPath string, port int, dir s
 	case err := <-errCh:
 		return err
 	}
+}
+
+func newVersionCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "version",
+		Short: "Print version information",
+		Long:  "Print the version information for ssg.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Fprintf(cmd.OutOrStdout(), "ssg version %s\n", Version)
+			return nil
+		},
+	}
+
+	return cmd
 }

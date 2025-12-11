@@ -17,6 +17,7 @@ import (
 type Builder struct {
 	cfg       *model.Config
 	assetsDir string
+	version   string
 }
 
 // New creates a new Builder with the given configuration.
@@ -27,6 +28,11 @@ func New(cfg *model.Config) *Builder {
 // SetAssetsDir sets the assets directory for static files.
 func (b *Builder) SetAssetsDir(dir string) {
 	b.assetsDir = dir
+}
+
+// SetVersion sets the version string for the build.
+func (b *Builder) SetVersion(version string) {
+	b.version = version
 }
 
 // ScanContent scans the content directory and returns a Site with all pages and posts.
@@ -140,6 +146,7 @@ func (b *Builder) Build() error {
 	if err != nil {
 		return err
 	}
+	r.SetVersion(b.version)
 
 	// Render pages with clean URLs
 	for _, page := range site.Pages {

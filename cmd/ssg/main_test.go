@@ -12,6 +12,41 @@ import (
 	"time"
 )
 
+func TestVersionVariables_DefaultValues(t *testing.T) {
+	t.Parallel()
+
+	// Version should default to "dev" when not set via ldflags
+	if Version == "" {
+		t.Error("Version should not be empty")
+	}
+	if Version != "dev" {
+		t.Logf("Version = %q (may be set via ldflags)", Version)
+	}
+
+	// BuildDate should default to "unknown" when not set via ldflags
+	if BuildDate == "" {
+		t.Error("BuildDate should not be empty")
+	}
+	if BuildDate != "unknown" {
+		t.Logf("BuildDate = %q (may be set via ldflags)", BuildDate)
+	}
+}
+
+func TestVersionVariables_AreExported(t *testing.T) {
+	t.Parallel()
+
+	// Verify variables are exported (accessible from test package)
+	// This ensures they can be set via -ldflags
+	_ = Version
+	_ = BuildDate
+
+	// Verify the version used by cobra matches Version
+	cmd := newRootCmd()
+	if cmd.Version != Version {
+		t.Errorf("cobra Version = %q, want %q", cmd.Version, Version)
+	}
+}
+
 func TestRootCommand_Version(t *testing.T) {
 	t.Parallel()
 
@@ -29,6 +64,31 @@ func TestRootCommand_Version(t *testing.T) {
 	output := buf.String()
 	if !strings.Contains(output, "ssg") {
 		t.Error("version output should contain 'ssg'")
+	}
+}
+
+func TestVersionCommand_OutputFormat(t *testing.T) {
+	t.Parallel()
+
+	cmd := newRootCmd()
+	cmd.SetArgs([]string{"--version"})
+
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	output := buf.String()
+	// Should contain version info
+	if !strings.Contains(output, "ssg") {
+		t.Error("version output should contain 'ssg'")
+	}
+	// Version string should be included (whether "dev" or a git SHA)
+	if !strings.Contains(output, "version") && !strings.Contains(output, "ssg version") {
+		t.Logf("version output: %q", output)
 	}
 }
 
@@ -548,5 +608,177 @@ build:
 				t.Errorf("error should mention invalid port, got: %v", err)
 			}
 		})
+	}
+}
+
+func TestVersionCommand_Exists(t *testing.T) {
+	t.Parallel()
+
+	cmd := newRootCmd()
+	versionCmd, _, err := cmd.Find([]string{"version"})
+	if err != nil {
+		t.Fatalf("Find(\"version\") error = %v", err)
+	}
+
+	if versionCmd.Name() != "version" {
+		t.Errorf("command name = %q, want %q", versionCmd.Name(), "version")
+	}
+}
+
+func TestVersionCommand_OutputsVersionString(t *testing.T) {
+	t.Parallel()
+
+	cmd := newRootCmd()
+	cmd.SetArgs([]string{"version"})
+
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	output := buf.String()
+	expected := "ssg version " + Version + "\n"
+	if output != expected {
+		t.Errorf("version output = %q, want %q", output, expected)
+	}
+}
+
+func TestBuildCommand_VersionFlowsToFooter(t *testing.T) {
+	t.Parallel()
+
+	// Setup test directories
+	tmpDir := t.TempDir()
+	contentDir := filepath.Join(tmpDir, "content")
+	outputDir := filepath.Join(tmpDir, "public")
+	os.MkdirAll(contentDir, 0755)
+
+	// Create a simple page
+	pageContent := `---
+title: Test Page
+slug: test
+---
+# Test Content`
+	os.WriteFile(filepath.Join(contentDir, "test.md"), []byte(pageContent), 0644)
+
+	// Create config file
+	configPath := filepath.Join(tmpDir, "ssg.yaml")
+	configContent := `site:
+  title: Test Site
+  baseURL: https://example.com
+  author: Test Author
+build:
+  content: ` + contentDir + `
+  output: ` + outputDir + `
+`
+	os.WriteFile(configPath, []byte(configContent), 0644)
+
+	// Run build
+	err := runBuild(configPath, "", "", "")
+	if err != nil {
+		t.Fatalf("runBuild() error = %v", err)
+	}
+
+	// Read generated HTML
+	htmlPath := filepath.Join(outputDir, "test", "index.html")
+	htmlBytes, err := os.ReadFile(htmlPath)
+	if err != nil {
+		t.Fatalf("reading generated HTML: %v", err)
+	}
+
+	html := string(htmlBytes)
+	// Version should appear in footer
+	if !strings.Contains(html, Version) {
+		t.Errorf("generated HTML should contain version %q in footer, got:\n%s", Version, html)
+	}
+}
+
+func TestServeCommand_WithBuild_VersionFlowsToFooter(t *testing.T) {
+	t.Parallel()
+
+	// Setup test directories
+	tmpDir := t.TempDir()
+	contentDir := filepath.Join(tmpDir, "content")
+	outputDir := filepath.Join(tmpDir, "public")
+	os.MkdirAll(contentDir, 0755)
+
+	// Create a simple page
+	pageContent := `---
+title: Test Page
+slug: test
+---
+# Test Content`
+	os.WriteFile(filepath.Join(contentDir, "test.md"), []byte(pageContent), 0644)
+
+	// Create config file
+	configPath := filepath.Join(tmpDir, "ssg.yaml")
+	configContent := `site:
+  title: Test Site
+  baseURL: https://example.com
+  author: Test Author
+build:
+  content: ` + contentDir + `
+  output: ` + outputDir + `
+`
+	os.WriteFile(configPath, []byte(configContent), 0644)
+
+	// Use cancellable context to stop server after build
+	ctx, cancel := context.WithCancel(context.Background())
+	addrCh := make(chan string, 1)
+	errCh := make(chan error, 1)
+
+	go func() {
+		errCh <- runServeWithContext(ctx, configPath, 0, "", true, addrCh)
+	}()
+
+	// Wait for server to start
+	var addr string
+	select {
+	case addr = <-addrCh:
+	case err := <-errCh:
+		t.Fatalf("runServeWithContext() error = %v", err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for server to start")
+	}
+
+	// Read generated HTML
+	htmlPath := filepath.Join(outputDir, "test", "index.html")
+	htmlBytes, err := os.ReadFile(htmlPath)
+	if err != nil {
+		t.Fatalf("reading generated HTML: %v", err)
+	}
+
+	html := string(htmlBytes)
+	// Version should appear in footer
+	if !strings.Contains(html, Version) {
+		t.Errorf("generated HTML should contain version %q in footer, got:\n%s", Version, html)
+	}
+
+	// Also test via HTTP request
+	resp, err := http.Get("http://" + addr + "/test/")
+	if err != nil {
+		t.Fatalf("GET failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("reading body: %v", err)
+	}
+
+	if !strings.Contains(string(body), Version) {
+		t.Errorf("HTTP response should contain version %q in footer", Version)
+	}
+
+	// Shutdown server
+	cancel()
+
+	// Wait for clean shutdown
+	select {
+	case <-errCh:
+	case <-time.After(2 * time.Second):
+		t.Error("timeout waiting for server to stop")
 	}
 }

@@ -16,6 +16,7 @@ var templateFS embed.FS
 // Renderer renders HTML templates with site data.
 type Renderer struct {
 	templates *template.Template
+	version   string
 }
 
 // New creates a new Renderer with embedded templates.
@@ -27,6 +28,11 @@ func New() (*Renderer, error) {
 	return &Renderer{templates: tmpl}, nil
 }
 
+// SetVersion sets the version string to be included in rendered templates.
+func (r *Renderer) SetVersion(version string) {
+	r.version = version
+}
+
 // baseData holds data for base template rendering.
 type baseData struct {
 	Site         model.Site
@@ -36,6 +42,7 @@ type baseData struct {
 	IsPost       bool
 	OGImage      string
 	Content      template.HTML
+	Version      string
 }
 
 // pageData holds data for page template rendering.
@@ -46,6 +53,7 @@ type pageData struct {
 	Summary      string
 	IsPost       bool
 	OGImage      string
+	Version      string
 	Page         struct {
 		Title   string
 		Content template.HTML
@@ -67,6 +75,7 @@ type blogListData struct {
 	Summary      string
 	IsPost       bool
 	OGImage      string
+	Version      string
 	Posts        []blogPostItem
 }
 
@@ -78,6 +87,7 @@ type blogPostData struct {
 	Summary       string
 	IsPost        bool
 	OGImage       string
+	Version       string
 	DatePublished string
 	Post          struct {
 		Title         string
@@ -91,6 +101,7 @@ func (r *Renderer) RenderBase(site model.Site, content string) (string, error) {
 	data := baseData{
 		Site:    site,
 		Content: template.HTML(content),
+		Version: r.version,
 	}
 
 	var buf bytes.Buffer
@@ -109,6 +120,7 @@ func (r *Renderer) RenderPage(site model.Site, page model.Page) (string, error) 
 		Summary:      site.Description,
 		IsPost:       false,
 		OGImage:      ogImageURL(site),
+		Version:      r.version,
 	}
 	data.Page.Title = page.Title
 	data.Page.Content = template.HTML(page.Content)
@@ -146,6 +158,7 @@ func (r *Renderer) RenderBlogList(site model.Site, posts []model.Post) (string, 
 		Summary:      site.Description,
 		IsPost:       false,
 		OGImage:      ogImageURL(site),
+		Version:      r.version,
 		Posts:        items,
 	}
 
@@ -169,6 +182,7 @@ func (r *Renderer) RenderBlogPost(site model.Site, post model.Post) (string, err
 		Summary:       summary,
 		IsPost:        true,
 		OGImage:       ogImageURL(site),
+		Version:       r.version,
 		DatePublished: post.Date.Format("2006-01-02"),
 	}
 	data.Post.Title = post.Title
@@ -190,6 +204,7 @@ type homeData struct {
 	Summary      string
 	IsPost       bool
 	OGImage      string
+	Version      string
 }
 
 // RenderHome renders the homepage.
@@ -200,6 +215,7 @@ func (r *Renderer) RenderHome(site model.Site) (string, error) {
 		Summary:      site.Description,
 		IsPost:       false,
 		OGImage:      ogImageURL(site),
+		Version:      r.version,
 	}
 
 	var buf bytes.Buffer
@@ -217,6 +233,7 @@ type notFoundData struct {
 	Summary      string
 	IsPost       bool
 	OGImage      string
+	Version      string
 }
 
 // Render404 renders the 404 error page.
@@ -226,6 +243,7 @@ func (r *Renderer) Render404(site model.Site) (string, error) {
 		PageTitle:    "Page Not Found",
 		CanonicalURL: site.BaseURL + "/404/",
 		Summary:      site.Description,
+		Version:      r.version,
 	}
 
 	var buf bytes.Buffer

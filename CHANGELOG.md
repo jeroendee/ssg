@@ -9,6 +9,7 @@
 - Add logo support to templates (ssg-eff.2)
 - RSS Feed Support for Blog (ssg-fpq)
 - Development Server (ssg serve) (ssg-gt2)
+- Add make changelog target for CHANGELOG.md generation (ssg-l3t)
 - Add logo support to templates (ssg-me2)
 
 ### Fixed
