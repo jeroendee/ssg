@@ -1419,3 +1419,87 @@ func TestRenderBlogPost_JSONLDArticleSchema(t *testing.T) {
 		t.Error("RenderBlogPost() missing description in Article JSON-LD")
 	}
 }
+
+func TestRenderer_SetVersion(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	// SetVersion should store version
+	r.SetVersion("v1.2.3")
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+
+	// Test version appears in RenderHome
+	got, err := r.RenderHome(site)
+	if err != nil {
+		t.Fatalf("RenderHome() error = %v", err)
+	}
+	if !strings.Contains(got, "v1.2.3") {
+		t.Error("RenderHome() should include version in output")
+	}
+
+	// Test version appears in RenderPage
+	page := model.Page{
+		Title:   "About",
+		Slug:    "about",
+		Content: "<p>About content</p>",
+	}
+	got, err = r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+	if !strings.Contains(got, "v1.2.3") {
+		t.Error("RenderPage() should include version in output")
+	}
+
+	// Test version appears in RenderBlogList
+	got, err = r.RenderBlogList(site, nil)
+	if err != nil {
+		t.Fatalf("RenderBlogList() error = %v", err)
+	}
+	if !strings.Contains(got, "v1.2.3") {
+		t.Error("RenderBlogList() should include version in output")
+	}
+
+	// Test version appears in RenderBlogPost
+	post := model.Post{
+		Page: model.Page{
+			Title:   "Post",
+			Slug:    "post",
+			Content: "<p>Content</p>",
+		},
+		Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+	}
+	got, err = r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+	if !strings.Contains(got, "v1.2.3") {
+		t.Error("RenderBlogPost() should include version in output")
+	}
+
+	// Test version appears in Render404
+	got, err = r.Render404(site)
+	if err != nil {
+		t.Fatalf("Render404() error = %v", err)
+	}
+	if !strings.Contains(got, "v1.2.3") {
+		t.Error("Render404() should include version in output")
+	}
+
+	// Test version appears in RenderBase
+	got, err = r.RenderBase(site, "Test content")
+	if err != nil {
+		t.Fatalf("RenderBase() error = %v", err)
+	}
+	if !strings.Contains(got, "v1.2.3") {
+		t.Error("RenderBase() should include version in output")
+	}
+}

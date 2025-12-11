@@ -27,7 +27,13 @@ Or build from source:
 ```bash
 git clone https://github.com/jeroendee/ssg.git
 cd ssg
-go build -o ssg ./cmd/ssg
+make build  # Builds with version injection (recommended)
+```
+
+The `make build` command automatically injects the git commit SHA as the version. To build manually without version injection:
+
+```bash
+go build -o bin/ssg ./cmd/ssg  # Version will be "dev"
 ```
 
 ## Quick Start
@@ -90,6 +96,22 @@ Flags:
       --assets string    assets directory (default "assets")
 ```
 
+### Version
+
+Print version information:
+
+```
+ssg version
+```
+
+Outputs the current version (git commit SHA) of the ssg binary. Example output:
+
+```
+ssg version f4a9750
+```
+
+When built without version injection (e.g., `go build`), displays `dev`. When built via `make build`, the version is automatically injected as the git commit SHA.
+
 ### Serve
 
 Start a local development server to preview your site:
@@ -122,6 +144,7 @@ Common development tasks are available via `make`:
 | Target | Description |
 |--------|-------------|
 | `make all` | Run fmt, vet, test, build (CI pipeline) |
+| `make build` | Build binary with version injection (git SHA) |
 | `make dev` | Quick restart: kill server, copy assets, serve |
 | `make serve` | Full workflow: kill, assets, build, serve |
 | `make test` | Run tests |
@@ -129,6 +152,15 @@ Common development tasks are available via `make`:
 | `make clean` | Remove build artifacts |
 
 Override defaults: `make serve PORT=3000`
+
+### Version Injection
+
+The `make build` target automatically injects the current git commit SHA as the version using `-ldflags`. The version appears in:
+
+- `ssg version` command output
+- Footer of generated sites: "Made with ❤️ in Amsterdam (f4a9750)"
+
+Version is determined by `git describe --tags --always --dirty` and defaults to `dev` if git is unavailable or when building with plain `go build`.
 
 ## Content Format
 

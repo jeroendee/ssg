@@ -4,6 +4,8 @@
 PORT ?= 8080
 DEV_DIR ?= dev
 BIN_DIR ?= bin
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo 'dev')
+LDFLAGS := -X 'main.Version=$(VERSION)'
 
 .PHONY: all test test-v test-cover build install serve serve-only kill assets fmt vet lint clean dev help changelog
 
@@ -24,10 +26,10 @@ test-cover:
 
 build:
 	@mkdir -p $(BIN_DIR)
-	go build -o $(BIN_DIR)/ssg ./cmd/ssg
+	go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/ssg ./cmd/ssg
 
 install:
-	go install ./cmd/ssg
+	go install -ldflags "$(LDFLAGS)" ./cmd/ssg
 
 # Development server targets
 serve: kill assets build
