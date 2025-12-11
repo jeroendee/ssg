@@ -30,6 +30,8 @@
 //
 // # Methods
 //
+// SetVersion sets the version string to be included in rendered templates.
+//
 // RenderBase renders the base template with site data and content.
 // It accepts raw HTML content and wraps it with the site's base template.
 //
