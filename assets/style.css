@@ -1,5 +1,32 @@
 /* BearBlog-style CSS for Quality Shepherd */
-/* Responsive design with dark mode support */
+/* Responsive design with Solarized color scheme */
+
+/* Light mode color scheme (default) */
+:root {
+  --bg-primary: #fdf6e3;
+  --bg-secondary: #eee8d5;
+  --bg-input: #eee8d5;
+  --text-primary: #657b83;
+  --text-secondary: #93a1a1;
+  --text-emphasis: #586e75;
+  --accent-blue: #268bd2;
+  --accent-violet: #6c71c4;
+  --accent-yellow: #b58900;
+  --border: #93a1a1;
+}
+
+/* Dark mode color scheme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #002b36;
+    --bg-secondary: #073642;
+    --bg-input: #073642;
+    --text-primary: #839496;
+    --text-secondary: #586e75;
+    --text-emphasis: #93a1a1;
+    --border: #586e75;
+  }
+}
 
 body {
   font-family: Verdana, sans-serif;
@@ -7,19 +34,19 @@ body {
   padding: 20px;
   max-width: 720px;
   text-align: left;
-  background-color: #fff;
+  background-color: var(--bg-primary);
   word-wrap: break-word;
   overflow-wrap: break-word;
   line-height: 1.5;
-  color: #444;
+  color: var(--text-primary);
 }
 
 h1, h2, h3, h4, h5, h6, strong, b {
-  color: #222;
+  color: var(--text-emphasis);
 }
 
 a {
-  color: #3273dc;
+  color: var(--accent-blue);
 }
 
 .title {
@@ -35,7 +62,7 @@ a {
 header {
   margin-bottom: 20px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid var(--border);
   overflow: hidden;
 }
 
@@ -76,10 +103,14 @@ nav a {
 textarea {
   width: 100%;
   font-size: 16px;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
 }
 
 input {
   font-size: 16px;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .content {
@@ -96,11 +127,11 @@ img {
 
 code {
   padding: 2px 5px;
-  background-color: #f2f2f2;
+  background-color: var(--bg-secondary);
 }
 
 pre code {
-  color: #222;
+  color: var(--text-emphasis);
   display: block;
   padding: 20px;
   white-space: pre-wrap;
@@ -108,8 +139,8 @@ pre code {
 }
 
 blockquote {
-  border-left: 1px solid #999;
-  color: #222;
+  border-left: 1px solid var(--border);
+  color: var(--text-emphasis);
   padding-left: 20px;
   font-style: italic;
 }
@@ -120,12 +151,12 @@ footer {
 }
 
 .helptext {
-  color: #777;
+  color: var(--text-secondary);
   font-size: small;
 }
 
 .errorlist {
-  color: #eba613;
+  color: var(--accent-yellow);
   font-size: small;
 }
 
@@ -144,12 +175,12 @@ ul.blog-list li span {
 }
 
 ul.blog-list li a:visited {
-  color: #8b6fcb;
+  color: var(--accent-violet);
 }
 
 /* Blog post date styling */
 .date {
-  color: #777;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -161,55 +192,10 @@ ul.blog-list li a:visited {
 }
 
 .word-count {
-  color: #777;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #333;
-    color: #ddd;
-  }
-
-  h1, h2, h3, h4, h5, h6, strong, b {
-    color: #eee;
-  }
-
-  a {
-    color: #8cc2dd;
-  }
-
-  code {
-    background-color: #777;
-  }
-
-  pre code {
-    color: #ddd;
-  }
-
-  blockquote {
-    color: #ccc;
-  }
-
-  textarea, input {
-    background-color: #252525;
-    color: #ddd;
-  }
-
-  .helptext {
-    color: #aaa;
-  }
-
-  .date {
-    color: #aaa;
-  }
-
-  .word-count {
-    color: #aaa;
-  }
-
-  header {
-    border-bottom-color: #555;
-  }
+.version {
+  color: var(--text-secondary);
 }

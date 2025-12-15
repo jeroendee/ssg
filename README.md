@@ -13,7 +13,7 @@ A minimal static site generator for blogs, written in Go.
 - Asset copying (CSS, images, etc.)
 - Auto-generated homepage, blog listing, and 404 page
 - RSS 2.0 feed generation for blog posts
-- Dark mode support (automatic via `prefers-color-scheme`)
+- Solarized color scheme with automatic light/dark mode (via `prefers-color-scheme`)
 - Development server for local preview
 
 ## Installation
