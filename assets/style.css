@@ -29,7 +29,7 @@
 }
 
 body {
-  font-family: Verdana, sans-serif;
+  font-family: 'Ubuntu', sans-serif;
   margin: auto;
   padding: 20px;
   max-width: 720px;
@@ -126,11 +126,13 @@ img {
 }
 
 code {
+  font-family: 'Ubuntu Mono', monospace;
   padding: 2px 5px;
   background-color: var(--bg-secondary);
 }
 
 pre code {
+  font-family: 'Ubuntu Mono', monospace;
   color: var(--text-emphasis);
   display: block;
   padding: 20px;

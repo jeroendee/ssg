@@ -7,6 +7,9 @@
     <title>{{if .PageTitle}}{{.PageTitle}} - {{end}}{{.Site.Title}}</title>
     {{if .Summary}}<meta name="description" content="{{.Summary}}">{{end}}
     {{if .CanonicalURL}}<link rel="canonical" href="{{.CanonicalURL}}">{{end}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     {{if .Site.Favicon}}<link rel="icon" href="{{.Site.Favicon}}" type="{{.Site.FaviconMIMEType}}">{{end}}
     <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed/">
