@@ -93,6 +93,7 @@ type blogPostData struct {
 		Title         string
 		DateFormatted string
 		Content       template.HTML
+		WordCount     int
 	}
 }
 
@@ -188,6 +189,7 @@ func (r *Renderer) RenderBlogPost(site model.Site, post model.Post) (string, err
 	data.Post.Title = post.Title
 	data.Post.DateFormatted = post.Date.Format("2006-01-02")
 	data.Post.Content = template.HTML(post.Content)
+	data.Post.WordCount = post.WordCount
 
 	var buf bytes.Buffer
 	if err := r.templates.ExecuteTemplate(&buf, "blog_post.html", data); err != nil {

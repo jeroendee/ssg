@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jeroendee/ssg/internal/model"
+	"github.com/jeroendee/ssg/internal/wordcount"
 	"github.com/yuin/goldmark"
 	"gopkg.in/yaml.v3"
 )
@@ -118,7 +119,8 @@ func ParsePost(path string) (*model.Post, error) {
 			Path:     "/blog/" + slug + "/",
 			Template: template,
 		},
-		Date:    postDate,
-		Summary: fm.Summary,
+		Date:      postDate,
+		Summary:   fm.Summary,
+		WordCount: wordcount.Count(body),
 	}, nil
 }

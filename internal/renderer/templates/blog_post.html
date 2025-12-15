@@ -3,7 +3,7 @@
     <main>
         <article>
             <h1>{{.Post.Title}}</h1>
-            <p class="date">{{.Post.DateFormatted}}</p>
+            <div class="post-meta"><span class="date">{{.Post.DateFormatted}}</span><span class="word-count">{{.Post.WordCount}} words</span></div>
             <div class="content">
                 {{.Post.Content}}
             </div>

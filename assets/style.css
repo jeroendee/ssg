@@ -153,6 +153,18 @@ ul.blog-list li a:visited {
   font-style: italic;
 }
 
+.post-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.word-count {
+  color: #777;
+  font-style: italic;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   body {
@@ -190,6 +202,10 @@ ul.blog-list li a:visited {
   }
 
   .date {
+    color: #aaa;
+  }
+
+  .word-count {
     color: #aaa;
   }
 

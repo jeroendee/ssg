@@ -548,6 +548,70 @@ func TestRenderBase_WithFavicon(t *testing.T) {
 	}
 }
 
+func TestRenderBlogPost_WordCount(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		site          model.Site
+		post          model.Post
+		wantWordCount string
+	}{
+		{
+			name: "renders word count in blog post",
+			site: model.Site{
+				Title: "Test Site",
+			},
+			post: model.Post{
+				Page: model.Page{
+					Title:   "Test Post",
+					Slug:    "test-post",
+					Content: "<p>Test content</p>",
+				},
+				Date:      time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+				WordCount: 150,
+			},
+			wantWordCount: "150 words",
+		},
+		{
+			name: "renders zero word count",
+			site: model.Site{
+				Title: "Test Site",
+			},
+			post: model.Post{
+				Page: model.Page{
+					Title:   "Empty Post",
+					Slug:    "empty-post",
+					Content: "",
+				},
+				Date:      time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+				WordCount: 0,
+			},
+			wantWordCount: "0 words",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			r, err := New()
+			if err != nil {
+				t.Fatalf("New() error = %v", err)
+			}
+
+			got, err := r.RenderBlogPost(tt.site, tt.post)
+			if err != nil {
+				t.Fatalf("RenderBlogPost() error = %v", err)
+			}
+
+			if !strings.Contains(got, tt.wantWordCount) {
+				t.Errorf("RenderBlogPost() missing word count %q in output", tt.wantWordCount)
+			}
+		})
+	}
+}
+
 func TestRenderBase_WithoutFavicon(t *testing.T) {
 	t.Parallel()
 

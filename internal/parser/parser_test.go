@@ -167,3 +167,24 @@ func TestParsePost_NonExistentFile(t *testing.T) {
 		t.Error("ParsePost() expected error for non-existent file")
 	}
 }
+
+func TestParsePost_WordCount(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	file := filepath.Join(dir, "test-post.md")
+	content := `---
+title: "Test Post"
+---
+Hello! My name is Jeroen.`
+	if err := os.WriteFile(file, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	post, err := parser.ParsePost(file)
+	if err != nil {
+		t.Fatalf("ParsePost() error = %v", err)
+	}
+	if post.WordCount != 5 {
+		t.Errorf("WordCount = %d, want 5", post.WordCount)
+	}
+}

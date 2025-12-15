@@ -24,8 +24,9 @@ type Page struct {
 // Post represents a blog post with date and summary.
 type Post struct {
 	Page
-	Date    time.Time
-	Summary string
+	Date      time.Time
+	Summary   string
+	WordCount int
 }
 
 // Site represents the complete site with all pages and posts.
