@@ -14,3 +14,6 @@ package-lock.json
 .github/copilot-instructions.md
 dev
 bin/ssg
+specs/amendments/.DS_Store
+specs/.DS_Store
+.DS_Store

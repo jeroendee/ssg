@@ -65,6 +65,7 @@ type blogPostItem struct {
 	Title         string
 	Slug          string
 	DateFormatted string
+	WordCount     int
 }
 
 // blogListData holds data for blog list template rendering.
@@ -149,6 +150,7 @@ func (r *Renderer) RenderBlogList(site model.Site, posts []model.Post) (string, 
 			Title:         p.Title,
 			Slug:          p.Slug,
 			DateFormatted: p.Date.Format("2006-01-02"),
+			WordCount:     p.WordCount,
 		}
 	}
 

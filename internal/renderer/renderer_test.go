@@ -87,11 +87,12 @@ func TestRenderBlogList(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name      string
-		site      model.Site
-		posts     []model.Post
-		wantDates []string
-		wantLinks []string
+		name           string
+		site           model.Site
+		posts          []model.Post
+		wantDates      []string
+		wantLinks      []string
+		wantWordCounts []string
 	}{
 		{
 			name: "renders blog list with posts",
@@ -117,17 +118,46 @@ func TestRenderBlogList(t *testing.T) {
 					Date: time.Date(2021, 4, 15, 0, 0, 0, 0, time.UTC),
 				},
 			},
-			wantDates: []string{"2021-03-26", "2021-04-15"},
-			wantLinks: []string{"First Post", "Second Post"},
+			wantDates:      []string{"2021-03-26", "2021-04-15"},
+			wantLinks:      []string{"First Post", "Second Post"},
+			wantWordCounts: []string{},
 		},
 		{
 			name: "renders empty blog list",
 			site: model.Site{
 				Title: "Test Site",
 			},
-			posts:     []model.Post{},
-			wantDates: []string{},
-			wantLinks: []string{},
+			posts:          []model.Post{},
+			wantDates:      []string{},
+			wantLinks:      []string{},
+			wantWordCounts: []string{},
+		},
+		{
+			name: "renders blog list with word counts",
+			site: model.Site{
+				Title: "Test Site",
+			},
+			posts: []model.Post{
+				{
+					Page: model.Page{
+						Title: "Post with word count",
+						Slug:  "post-with-word-count",
+					},
+					Date:      time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+					WordCount: 150,
+				},
+				{
+					Page: model.Page{
+						Title: "Another post",
+						Slug:  "another-post",
+					},
+					Date:      time.Date(2024, 1, 16, 0, 0, 0, 0, time.UTC),
+					WordCount: 250,
+				},
+			},
+			wantDates:      []string{"2024-01-15", "2024-01-16"},
+			wantLinks:      []string{"Post with word count", "Another post"},
+			wantWordCounts: []string{"150 words", "250 words"},
 		},
 	}
 
@@ -156,6 +186,13 @@ func TestRenderBlogList(t *testing.T) {
 			for _, link := range tt.wantLinks {
 				if !strings.Contains(got, link) {
 					t.Errorf("RenderBlogList() missing link %q", link)
+				}
+			}
+
+			// Check word counts are rendered
+			for _, wordCount := range tt.wantWordCounts {
+				if !strings.Contains(got, wordCount) {
+					t.Errorf("RenderBlogList() missing word count %q", wordCount)
 				}
 			}
 

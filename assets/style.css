@@ -172,8 +172,17 @@ ul.blog-list li {
   display: flex;
 }
 
-ul.blog-list li span {
+ul.blog-list li span.date {
   flex: 0 0 130px;
+}
+
+ul.blog-list li a {
+  flex: 1 1 auto;
+}
+
+ul.blog-list li span.word-count {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 ul.blog-list li a:visited {
