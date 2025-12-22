@@ -1,11 +1,13 @@
 package builder
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/jeroendee/ssg/internal/assets"
 	"github.com/jeroendee/ssg/internal/model"
 )
 
@@ -852,5 +854,127 @@ func TestBuild_PassesVersionToRenderer(t *testing.T) {
 	// Version should appear in footer
 	if !strings.Contains(string(content), testVersion) {
 		t.Errorf("Build() page should contain version %q in footer", testVersion)
+	}
+}
+
+func TestBuild_EmbeddedStyleCSS_NoAssetsDir(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	// Embedded style.css should be written to output
+	stylePath := filepath.Join(outputDir, "style.css")
+	if _, err := os.Stat(stylePath); os.IsNotExist(err) {
+		t.Fatalf("Build() did not write embedded style.css to %s", stylePath)
+	}
+
+	content, err := os.ReadFile(stylePath)
+	if err != nil {
+		t.Fatalf("failed to read style.css: %v", err)
+	}
+
+	if !bytes.Equal(content, assets.DefaultStyleCSS()) {
+		t.Errorf("Build() style.css content does not match embedded default\ngot %d bytes, want %d bytes", len(content), len(assets.DefaultStyleCSS()))
+	}
+}
+
+func TestBuild_CustomStyleCSS_Override(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+	assetsDir := t.TempDir()
+
+	customCSS := "body { color: red; }"
+	writeFile(t, filepath.Join(assetsDir, "style.css"), customCSS)
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	b.SetAssetsDir(assetsDir)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	// Custom style.css should be used
+	stylePath := filepath.Join(outputDir, "style.css")
+	content, err := os.ReadFile(stylePath)
+	if err != nil {
+		t.Fatalf("failed to read style.css: %v", err)
+	}
+
+	if !bytes.Equal(content, []byte(customCSS)) {
+		t.Errorf("Build() style.css content does not match custom CSS\ngot:  %q\nwant: %q", string(content), customCSS)
+	}
+}
+
+func TestBuild_EmbeddedStyleCSS_WithOtherAssets(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+	assetsDir := t.TempDir()
+
+	writeFile(t, filepath.Join(assetsDir, "favicon.ico"), "fake favicon")
+	writeFile(t, filepath.Join(assetsDir, "logo.png"), "fake logo")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	b.SetAssetsDir(assetsDir)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	// Embedded style.css should be written
+	stylePath := filepath.Join(outputDir, "style.css")
+	if _, err := os.Stat(stylePath); os.IsNotExist(err) {
+		t.Fatalf("Build() did not write embedded style.css to %s", stylePath)
+	}
+
+	// Other assets should also be copied
+	faviconPath := filepath.Join(outputDir, "favicon.ico")
+	if _, err := os.Stat(faviconPath); os.IsNotExist(err) {
+		t.Fatalf("Build() did not copy favicon.ico to %s", faviconPath)
+	}
+
+	logoPath := filepath.Join(outputDir, "logo.png")
+	if _, err := os.Stat(logoPath); os.IsNotExist(err) {
+		t.Fatalf("Build() did not copy logo.png to %s", logoPath)
+	}
+
+	content, err := os.ReadFile(stylePath)
+	if err != nil {
+		t.Fatalf("failed to read style.css: %v", err)
+	}
+
+	if !bytes.Equal(content, assets.DefaultStyleCSS()) {
+		t.Errorf("Build() style.css content does not match embedded default\ngot %d bytes, want %d bytes", len(content), len(assets.DefaultStyleCSS()))
 	}
 }

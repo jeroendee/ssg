@@ -16,6 +16,11 @@ site:
 
 # Build settings
 build:
+  # Assets directory (default: "assets")
+  # Contains static files like images and custom CSS
+  # A default style.css is included - add your own assets/style.css to override
+  assets: assets
+
   # Content directory (default: "content")
   # Contains markdown files for pages and blog posts
   content: content
@@ -38,8 +43,7 @@ navigation:
 #
 # project/
 # ├── ssg.yaml              # This config file
-# ├── assets/               # Static files (CSS, images, favicon)
-# │   └── style.css
+# ├── assets/               # Optional: static files (images, custom style.css)
 # ├── content/              # Markdown content
 # │   ├── about.md          # Static page (becomes /about/)
 # │   ├── contact.md        # Static page (becomes /contact/)

@@ -49,7 +49,6 @@ site:
   favicon: /favicon.svg
 
 build:
-  assets: assets
   content: content
   output: public
 
@@ -67,8 +66,7 @@ navigation:
 ```
 project/
 ├── ssg.yaml
-├── assets/
-│   └── style.css
+├── assets/           # Optional: add style.css here to customize
 └── content/
     ├── about.md
     └── blog/
@@ -193,6 +191,16 @@ Your post content here.
 
 The date is extracted from the filename: `2024-01-15-my-first-post.md` → published January 15, 2024, accessible at `/blog/my-first-post/`
 
+## Styling
+
+ssg comes with a built-in default stylesheet (Solarized theme with automatic light/dark mode). To customize:
+
+1. Create an `assets/` directory in your project
+2. Add your own `style.css` file
+3. Your custom styles will be used instead of the default
+
+If you don't provide a custom stylesheet, the default is used automatically.
+
 ## Configuration
 
 | Field | Required | Default | Description |
@@ -203,7 +211,7 @@ The date is extracted from the filename: `2024-01-15-my-first-post.md` → publi
 | `site.logo` | No | - | Path to site logo (e.g., `/logo.svg`) |
 | `site.favicon` | No | - | Path to favicon (e.g., `/favicon.svg`) |
 | `site.description` | No | - | Site description for RSS feed |
-| `build.assets` | No | `assets` | Directory containing static assets (CSS, images) |
+| `build.assets` | No | `assets` | Directory containing static assets (CSS, images). A default style.css is provided; add your own to override. |
 | `build.content` | No | `content` | Directory containing markdown files |
 | `build.output` | No | `public` | Directory for generated HTML |
 | `navigation` | No | - | List of navigation menu items |
@@ -230,7 +238,7 @@ public/
 ├── 404.html            # Error page
 ├── robots.txt          # Crawler directives
 ├── sitemap.xml         # Site map for search engines
-├── style.css           # Copied from assets/
+├── style.css           # Default stylesheet (or custom if provided in assets/)
 ├── feed/
 │   └── index.xml       # RSS feed
 ├── about/

@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jeroendee/ssg/internal/assets"
 	"github.com/jeroendee/ssg/internal/model"
 	"github.com/jeroendee/ssg/internal/parser"
 	"github.com/jeroendee/ssg/internal/renderer"
@@ -304,27 +305,32 @@ func (b *Builder) write404(r *renderer.Renderer, site model.Site) error {
 
 // copyAssets copies static assets to the output directory.
 func (b *Builder) copyAssets() error {
-	if b.assetsDir == "" {
-		return nil
+	if b.assetsDir != "" {
+		entries, err := os.ReadDir(b.assetsDir)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				return err
+			}
+		} else {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+
+				src := filepath.Join(b.assetsDir, entry.Name())
+				dst := filepath.Join(b.cfg.OutputDir, entry.Name())
+
+				if err := copyFile(src, dst); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
-	entries, err := os.ReadDir(b.assetsDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		src := filepath.Join(b.assetsDir, entry.Name())
-		dst := filepath.Join(b.cfg.OutputDir, entry.Name())
-
-		if err := copyFile(src, dst); err != nil {
+	// Write embedded default style.css if no custom one exists
+	stylePath := filepath.Join(b.cfg.OutputDir, "style.css")
+	if _, err := os.Stat(stylePath); os.IsNotExist(err) {
+		if err := os.WriteFile(stylePath, assets.DefaultStyleCSS(), 0644); err != nil {
 			return err
 		}
 	}
