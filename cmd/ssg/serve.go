@@ -69,7 +69,7 @@ func runServeWithContext(ctx context.Context, configPath string, port int, dir s
 	if doBuild {
 		b := builder.New(cfg)
 		b.SetVersion(Version)
-		b.SetAssetsDir("assets")
+		b.SetAssetsDir(cfg.AssetsDir)
 		if err := b.Build(); err != nil {
 			return fmt.Errorf("building site: %w", err)
 		}

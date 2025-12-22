@@ -11,6 +11,7 @@
 //	  logo: /images/logo.png
 //	  favicon: /images/favicon.ico
 //	build:
+//	  assets: assets
 //	  content: content
 //	  output: public
 //	navigation:
@@ -18,8 +19,8 @@
 //	    url: /
 //
 // Use [Load] to read configuration from a file, or [LoadWithOptions] to
-// apply CLI flag overrides for content and output directories.
+// apply CLI flag overrides for assets, content, and output directories.
 //
 // Required fields are site.title and site.baseURL. Default values are
-// applied for content ("content") and output ("public") directories.
+// applied for assets ("assets"), content ("content"), and output ("public") directories.
 package config

@@ -52,6 +52,7 @@ type Config struct {
 	Favicon     string
 	ContentDir  string
 	OutputDir   string
+	AssetsDir   string
 	Navigation  []NavItem
 }
 

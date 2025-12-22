@@ -28,30 +28,27 @@ func newBuildCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&configPath, "config", "c", "ssg.yaml", "path to config file")
 	cmd.Flags().StringVarP(&outputDir, "output", "o", "", "output directory (overrides config)")
 	cmd.Flags().StringVar(&contentDir, "content", "", "content directory (overrides config)")
-	cmd.Flags().StringVar(&assetsDir, "assets", "assets", "assets directory")
+	cmd.Flags().StringVar(&assetsDir, "assets", "", "assets directory (overrides config)")
 
 	return cmd
 }
 
 func runBuild(configPath, outputDir, contentDir, assetsDir string) error {
-	// Load config
-	cfg, err := config.Load(configPath)
-	if err != nil {
-		return fmt.Errorf("loading config: %w", err)
+	opts := config.Options{
+		OutputDir:  outputDir,
+		ContentDir: contentDir,
+		AssetsDir:  assetsDir,
 	}
 
-	// Apply overrides
-	if outputDir != "" {
-		cfg.OutputDir = outputDir
-	}
-	if contentDir != "" {
-		cfg.ContentDir = contentDir
+	cfg, err := config.LoadWithOptions(configPath, opts)
+	if err != nil {
+		return fmt.Errorf("loading config: %w", err)
 	}
 
 	// Create and run builder
 	b := builder.New(cfg)
 	b.SetVersion(Version)
-	b.SetAssetsDir(assetsDir)
+	b.SetAssetsDir(cfg.AssetsDir)
 
 	if err := b.Build(); err != nil {
 		return fmt.Errorf("building site: %w", err)

@@ -117,6 +117,7 @@ func TestConfig(t *testing.T) {
 		Author:     "Jeroen",
 		ContentDir: "content",
 		OutputDir:  "public",
+		AssetsDir:  "assets",
 		Navigation: []model.NavItem{
 			{Title: "Home", URL: "/"},
 		},
@@ -129,6 +130,9 @@ func TestConfig(t *testing.T) {
 	}
 	if cfg.OutputDir != "public" {
 		t.Errorf("Config.OutputDir = %q, want %q", cfg.OutputDir, "public")
+	}
+	if cfg.AssetsDir != "assets" {
+		t.Errorf("Config.AssetsDir = %q, want %q", cfg.AssetsDir, "assets")
 	}
 }
 

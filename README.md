@@ -49,6 +49,7 @@ site:
   favicon: /favicon.svg
 
 build:
+  assets: assets
   content: content
   output: public
 
@@ -93,7 +94,7 @@ Flags:
   -c, --config string    path to config file (default "ssg.yaml")
   -o, --output string    output directory (overrides config)
       --content string   content directory (overrides config)
-      --assets string    assets directory (default "assets")
+      --assets string    assets directory (overrides config)
 ```
 
 ### Version
@@ -202,6 +203,7 @@ The date is extracted from the filename: `2024-01-15-my-first-post.md` → publi
 | `site.logo` | No | - | Path to site logo (e.g., `/logo.svg`) |
 | `site.favicon` | No | - | Path to favicon (e.g., `/favicon.svg`) |
 | `site.description` | No | - | Site description for RSS feed |
+| `build.assets` | No | `assets` | Directory containing static assets (CSS, images) |
 | `build.content` | No | `content` | Directory containing markdown files |
 | `build.output` | No | `public` | Directory for generated HTML |
 | `navigation` | No | - | List of navigation menu items |

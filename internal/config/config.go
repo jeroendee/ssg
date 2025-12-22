@@ -21,6 +21,7 @@ type yamlConfig struct {
 	Build struct {
 		Content string `yaml:"content"`
 		Output  string `yaml:"output"`
+		Assets  string `yaml:"assets"`
 	} `yaml:"build"`
 	Navigation []struct {
 		Title string `yaml:"title"`
@@ -32,6 +33,7 @@ type yamlConfig struct {
 type Options struct {
 	ContentDir string
 	OutputDir  string
+	AssetsDir  string
 }
 
 // Load reads configuration from a YAML file.
@@ -67,6 +69,7 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 		Favicon:     yc.Site.Favicon,
 		ContentDir:  yc.Build.Content,
 		OutputDir:   yc.Build.Output,
+		AssetsDir:   yc.Build.Assets,
 	}
 
 	// Apply defaults
@@ -76,6 +79,9 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 	if cfg.OutputDir == "" {
 		cfg.OutputDir = "public"
 	}
+	if cfg.AssetsDir == "" {
+		cfg.AssetsDir = "assets"
+	}
 
 	// Apply overrides
 	if opts.ContentDir != "" {
@@ -83,6 +89,9 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 	}
 	if opts.OutputDir != "" {
 		cfg.OutputDir = opts.OutputDir
+	}
+	if opts.AssetsDir != "" {
+		cfg.AssetsDir = opts.AssetsDir
 	}
 
 	// Convert navigation
