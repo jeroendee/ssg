@@ -33,27 +33,17 @@ func (r *Renderer) SetVersion(version string) {
 	r.version = version
 }
 
-// baseData holds data for base template rendering.
-type baseData struct {
+// templateData holds data for template rendering across all page types.
+type templateData struct {
 	Site         model.Site
 	PageTitle    string
 	CanonicalURL string
 	Summary      string
 	IsPost       bool
 	OGImage      string
+	Version      string
+	PageType     string
 	Content      template.HTML
-	Version      string
-}
-
-// pageData holds data for page template rendering.
-type pageData struct {
-	Site         model.Site
-	PageTitle    string
-	CanonicalURL string
-	Summary      string
-	IsPost       bool
-	OGImage      string
-	Version      string
 	Page         struct {
 		Title   string
 		Content template.HTML
@@ -100,10 +90,11 @@ type blogPostData struct {
 
 // RenderBase renders the base template with site data and content.
 func (r *Renderer) RenderBase(site model.Site, content string) (string, error) {
-	data := baseData{
-		Site:    site,
-		Content: template.HTML(content),
-		Version: r.version,
+	data := templateData{
+		Site:     site,
+		Content:  template.HTML(content),
+		Version:  r.version,
+		PageType: "base",
 	}
 
 	var buf bytes.Buffer
@@ -115,7 +106,7 @@ func (r *Renderer) RenderBase(site model.Site, content string) (string, error) {
 
 // RenderPage renders a static page with the page template.
 func (r *Renderer) RenderPage(site model.Site, page model.Page) (string, error) {
-	data := pageData{
+	data := templateData{
 		Site:         site,
 		PageTitle:    page.Title,
 		CanonicalURL: site.BaseURL + "/" + page.Slug + "/",
@@ -123,12 +114,13 @@ func (r *Renderer) RenderPage(site model.Site, page model.Page) (string, error) 
 		IsPost:       false,
 		OGImage:      ogImageURL(site),
 		Version:      r.version,
+		PageType:     "page",
 	}
 	data.Page.Title = page.Title
 	data.Page.Content = template.HTML(page.Content)
 
 	var buf bytes.Buffer
-	if err := r.templates.ExecuteTemplate(&buf, "page.html", data); err != nil {
+	if err := r.templates.ExecuteTemplate(&buf, "base.html", data); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -200,30 +192,20 @@ func (r *Renderer) RenderBlogPost(site model.Site, post model.Post) (string, err
 	return buf.String(), nil
 }
 
-// homeData holds data for home page template rendering.
-type homeData struct {
-	Site         model.Site
-	PageTitle    string
-	CanonicalURL string
-	Summary      string
-	IsPost       bool
-	OGImage      string
-	Version      string
-}
-
 // RenderHome renders the homepage.
 func (r *Renderer) RenderHome(site model.Site) (string, error) {
-	data := homeData{
+	data := templateData{
 		Site:         site,
 		CanonicalURL: site.BaseURL + "/",
 		Summary:      site.Description,
 		IsPost:       false,
 		OGImage:      ogImageURL(site),
 		Version:      r.version,
+		PageType:     "home",
 	}
 
 	var buf bytes.Buffer
-	if err := r.templates.ExecuteTemplate(&buf, "home.html", data); err != nil {
+	if err := r.templates.ExecuteTemplate(&buf, "base.html", data); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
