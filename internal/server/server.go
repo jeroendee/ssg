@@ -22,23 +22,26 @@ type Config struct {
 
 // Server serves static files over HTTP.
 type Server struct {
-	cfg    Config
-	server *http.Server
-	addr   string
-	mu     sync.RWMutex
+	cfg     Config
+	server  *http.Server
+	addr    string
+	handler http.Handler
+	mu      sync.RWMutex
 }
 
 // New creates a new Server with the given configuration.
 func New(cfg Config) *Server {
-	return &Server{cfg: cfg}
+	fs := http.FileServer(http.Dir(cfg.Dir))
+	handler := &xmlIndexHandler{dir: cfg.Dir, fs: fs}
+	return &Server{
+		cfg:     cfg,
+		handler: handler,
+	}
 }
 
 // Start begins serving files and blocks until the server is stopped.
 // It returns http.ErrServerClosed on graceful shutdown.
 func (s *Server) Start() error {
-	fs := http.FileServer(http.Dir(s.cfg.Dir))
-	handler := &xmlIndexHandler{dir: s.cfg.Dir, fs: fs}
-
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))
 	if err != nil {
 		return err
@@ -46,7 +49,7 @@ func (s *Server) Start() error {
 
 	s.mu.Lock()
 	s.addr = ln.Addr().String()
-	s.server = &http.Server{Handler: handler}
+	s.server = &http.Server{Handler: s.handler}
 	s.mu.Unlock()
 
 	return s.server.Serve(ln)
@@ -58,6 +61,11 @@ func (s *Server) Addr() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.addr
+}
+
+// Handler returns the HTTP handler used by the server.
+func (s *Server) Handler() http.Handler {
+	return s.handler
 }
 
 // Shutdown gracefully stops the server, allowing in-flight requests to complete.

@@ -5,11 +5,14 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jeroendee/ssg/internal/server"
 )
 
 func TestVersionVariables_DefaultValues(t *testing.T) {
@@ -298,6 +301,44 @@ func TestServeCommand_MissingConfig(t *testing.T) {
 	}
 }
 
+// startTestServer starts a test server in a goroutine and returns its address and cleanup function.
+// The cleanup function cancels the context and waits for the server to stop.
+func startTestServer(t *testing.T, configPath string, doBuild bool) (addr string, cleanup func()) {
+	t.Helper()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	addrCh := make(chan string, 1)
+	errCh := make(chan error, 1)
+
+	go func() {
+		errCh <- runServeWithContext(ctx, configPath, 0, "", doBuild, addrCh)
+	}()
+
+	// Wait for server to start or error
+	select {
+	case addr = <-addrCh:
+		// Server started successfully
+	case err := <-errCh:
+		t.Fatalf("server failed to start: %v", err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for server to start")
+	}
+
+	cleanup = func() {
+		cancel()
+
+		// Wait for server to stop
+		select {
+		case <-errCh:
+			// Server stopped
+		case <-time.After(2 * time.Second):
+			t.Error("timeout waiting for server to stop")
+		}
+	}
+
+	return addr, cleanup
+}
+
 func TestServeCommand_WithBuildFlag(t *testing.T) {
 	t.Parallel()
 
@@ -363,47 +404,19 @@ func TestServeCommand_StartsServer(t *testing.T) {
 
 	// Setup test directories
 	tmpDir := t.TempDir()
-	contentDir := filepath.Join(tmpDir, "content")
 	outputDir := filepath.Join(tmpDir, "public")
-	os.MkdirAll(contentDir, 0755)
 	os.MkdirAll(outputDir, 0755)
 
 	// Create test file in output dir
 	os.WriteFile(filepath.Join(outputDir, "index.html"), []byte("hello"), 0644)
 
-	// Create config file
-	configPath := filepath.Join(tmpDir, "ssg.yaml")
-	configContent := `site:
-  title: Test Site
-  baseURL: https://example.com
-  author: Test Author
-build:
-  content: ` + contentDir + `
-  output: ` + outputDir + `
-`
-	os.WriteFile(configPath, []byte(configContent), 0644)
-
-	// Start server in goroutine with context for cancellation
-	ctx, cancel := context.WithCancel(context.Background())
-	errCh := make(chan error, 1)
-	addrCh := make(chan string, 1)
-
-	go func() {
-		errCh <- runServeWithContext(ctx, configPath, 0, "", false, addrCh)
-	}()
-
-	// Wait for server to start and get address
-	var addr string
-	select {
-	case addr = <-addrCh:
-	case err := <-errCh:
-		t.Fatalf("server failed to start: %v", err)
-	case <-time.After(2 * time.Second):
-		t.Fatal("timeout waiting for server to start")
-	}
+	// Create server using httptest
+	srv := server.New(server.Config{Dir: outputDir})
+	ts := httptest.NewServer(srv.Handler())
+	defer ts.Close()
 
 	// Make request to server
-	resp, err := http.Get("http://" + addr + "/index.html")
+	resp, err := http.Get(ts.URL + "/index.html")
 	if err != nil {
 		t.Fatalf("GET failed: %v", err)
 	}
@@ -420,17 +433,6 @@ build:
 
 	if string(body) != "hello" {
 		t.Errorf("body = %q, want %q", body, "hello")
-	}
-
-	// Shutdown server
-	cancel()
-
-	// Wait for server to stop
-	select {
-	case <-errCh:
-		// Server stopped
-	case <-time.After(2 * time.Second):
-		t.Error("timeout waiting for server to stop")
 	}
 }
 
@@ -500,29 +502,15 @@ build:
 	os.WriteFile(configPath, []byte(configContent), 0644)
 
 	// Change to tmpDir so relative "assets" path works
-	origDir, _ := os.Getwd()
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("os.Getwd() error = %v", err)
+	}
 	os.Chdir(tmpDir)
 	defer os.Chdir(origDir)
 
-	// Use cancellable context to stop server after build
-	ctx, cancel := context.WithCancel(context.Background())
-	addrCh := make(chan string, 1)
-	errCh := make(chan error, 1)
-
-	go func() {
-		errCh <- runServeWithContext(ctx, configPath, 0, "", true, addrCh)
-	}()
-
-	// Wait for server to start (indicates build completed)
-	var addr string
-	select {
-	case addr = <-addrCh:
-		// Server started, build completed
-	case err := <-errCh:
-		t.Fatalf("runServeWithContext() error = %v", err)
-	case <-time.After(5 * time.Second):
-		t.Fatal("timeout waiting for server to start")
-	}
+	addr, cleanup := startTestServer(t, configPath, true)
+	defer cleanup()
 
 	// Verify assets were copied to output directory
 	copiedCSS := filepath.Join(outputDir, "style.css")
@@ -548,17 +536,6 @@ build:
 
 	if string(body) != cssContent {
 		t.Errorf("GET /style.css body = %q, want %q", body, cssContent)
-	}
-
-	// Shutdown server
-	cancel()
-
-	// Wait for clean shutdown
-	select {
-	case <-errCh:
-		// Server stopped
-	case <-time.After(2 * time.Second):
-		t.Error("timeout waiting for server to stop")
 	}
 }
 
@@ -724,24 +701,8 @@ build:
 `
 	os.WriteFile(configPath, []byte(configContent), 0644)
 
-	// Use cancellable context to stop server after build
-	ctx, cancel := context.WithCancel(context.Background())
-	addrCh := make(chan string, 1)
-	errCh := make(chan error, 1)
-
-	go func() {
-		errCh <- runServeWithContext(ctx, configPath, 0, "", true, addrCh)
-	}()
-
-	// Wait for server to start
-	var addr string
-	select {
-	case addr = <-addrCh:
-	case err := <-errCh:
-		t.Fatalf("runServeWithContext() error = %v", err)
-	case <-time.After(5 * time.Second):
-		t.Fatal("timeout waiting for server to start")
-	}
+	addr, cleanup := startTestServer(t, configPath, true)
+	defer cleanup()
 
 	// Read generated HTML
 	htmlPath := filepath.Join(outputDir, "test", "index.html")
@@ -770,15 +731,5 @@ build:
 
 	if !strings.Contains(string(body), Version) {
 		t.Errorf("HTTP response should contain version %q in footer", Version)
-	}
-
-	// Shutdown server
-	cancel()
-
-	// Wait for clean shutdown
-	select {
-	case <-errCh:
-	case <-time.After(2 * time.Second):
-		t.Error("timeout waiting for server to stop")
 	}
 }

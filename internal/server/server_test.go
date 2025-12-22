@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -184,5 +185,128 @@ func TestServerServesIndexXML(t *testing.T) {
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		t.Errorf("Shutdown failed: %v", err)
+	}
+}
+
+func TestHandler_ServesIndexHTML(t *testing.T) {
+	t.Parallel()
+
+	// Create temp directory with index.html
+	dir := t.TempDir()
+	content := []byte("<h1>Hello World</h1>")
+	if err := os.WriteFile(filepath.Join(dir, "index.html"), content, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	srv := server.New(server.Config{Dir: dir})
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status code = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	if got := rec.Body.String(); got != string(content) {
+		t.Errorf("body = %q, want %q", got, content)
+	}
+}
+
+func TestHandler_ServesIndexXML_WhenNoIndexHTML(t *testing.T) {
+	t.Parallel()
+
+	// Create temp directory with index.xml (no index.html)
+	dir := t.TempDir()
+	xmlContent := []byte(`<?xml version="1.0"?><feed></feed>`)
+	if err := os.WriteFile(filepath.Join(dir, "index.xml"), xmlContent, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	srv := server.New(server.Config{Dir: dir})
+	req := httptest.NewRequest("GET", "/", nil)
+	rec := httptest.NewRecorder()
+
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status code = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	contentType := rec.Header().Get("Content-Type")
+	if contentType != "text/xml; charset=utf-8" {
+		t.Errorf("Content-Type = %q, want %q", contentType, "text/xml; charset=utf-8")
+	}
+
+	if got := rec.Body.String(); got != string(xmlContent) {
+		t.Errorf("body = %q, want %q", got, xmlContent)
+	}
+}
+
+func TestHandler_Returns404_ForMissingFile(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	srv := server.New(server.Config{Dir: dir})
+	req := httptest.NewRequest("GET", "/missing.html", nil)
+	rec := httptest.NewRecorder()
+
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status code = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+}
+
+func TestHandler_SetsContentType_ForCSS(t *testing.T) {
+	t.Parallel()
+
+	// Create temp directory with CSS file
+	dir := t.TempDir()
+	cssContent := []byte("body { color: red; }")
+	if err := os.WriteFile(filepath.Join(dir, "style.css"), cssContent, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	srv := server.New(server.Config{Dir: dir})
+	req := httptest.NewRequest("GET", "/style.css", nil)
+	rec := httptest.NewRecorder()
+
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status code = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	contentType := rec.Header().Get("Content-Type")
+	if contentType != "text/css; charset=utf-8" {
+		t.Errorf("Content-Type = %q, want %q", contentType, "text/css; charset=utf-8")
+	}
+}
+
+func TestHandler_SetsContentType_ForXML(t *testing.T) {
+	t.Parallel()
+
+	// Create temp directory with XML file
+	dir := t.TempDir()
+	xmlContent := []byte(`<?xml version="1.0"?><data></data>`)
+	if err := os.WriteFile(filepath.Join(dir, "data.xml"), xmlContent, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	srv := server.New(server.Config{Dir: dir})
+	req := httptest.NewRequest("GET", "/data.xml", nil)
+	rec := httptest.NewRecorder()
+
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status code = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	contentType := rec.Header().Get("Content-Type")
+	// http.FileServer sets application/xml for .xml files
+	if contentType != "application/xml" {
+		t.Errorf("Content-Type = %q, want %q", contentType, "application/xml")
 	}
 }
