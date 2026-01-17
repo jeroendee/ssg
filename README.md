@@ -12,6 +12,7 @@ A minimal static site generator for blogs, written in Go.
 - Configurable navigation menu
 - Asset copying (CSS, images, etc.)
 - Auto-generated homepage, blog listing, and 404 page
+- Word count display on blog posts
 - RSS 2.0 feed generation for blog posts
 - Solarized color scheme with automatic light/dark mode (via `prefers-color-scheme`)
 - Development server for local preview
@@ -247,15 +248,6 @@ public/
     ├── index.html      # Blog listing
     └── my-first-post/
         └── index.html  # Blog post
-```
-
-## Example
-
-See the `example/` directory for a working site. To build it:
-
-```bash
-cd example
-../ssg build
 ```
 
 ## License
