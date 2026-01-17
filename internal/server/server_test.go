@@ -310,3 +310,126 @@ func TestHandler_SetsContentType_ForXML(t *testing.T) {
 		t.Errorf("Content-Type = %q, want %q", contentType, "application/xml")
 	}
 }
+
+func TestHandler_RejectsPathTraversal(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	// Create a legitimate file in the directory
+	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("ok"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		path string
+	}{
+		{
+			name: "obvious traversal",
+			path: "/../../../etc/passwd",
+		},
+		{
+			name: "traversal to tmp",
+			path: "/../../../tmp/secret",
+		},
+		{
+			name: "hidden traversal with valid prefix",
+			path: "/valid/../../../etc/passwd",
+		},
+		{
+			name: "double encoded traversal",
+			path: "/..%2F..%2F..%2Fetc/passwd",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			srv := server.New(server.Config{Dir: dir})
+			req := httptest.NewRequest("GET", tt.path, nil)
+			rec := httptest.NewRecorder()
+
+			srv.Handler().ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusForbidden {
+				t.Errorf("path %q: status = %d, want %d (Forbidden)", tt.path, rec.Code, http.StatusForbidden)
+			}
+		})
+	}
+}
+
+func TestHandler_AllowsLegitimatePathsWithTraversalCleanup(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	// Create index.html at root
+	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("root"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create feed/index.xml
+	feedDir := filepath.Join(dir, "feed")
+	if err := os.MkdirAll(feedDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(feedDir, "index.xml"), []byte("<feed/>"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name         string
+		path         string
+		wantStatus   int
+		wantContains string
+	}{
+		{
+			name:         "root directory",
+			path:         "/",
+			wantStatus:   http.StatusOK,
+			wantContains: "root",
+		},
+		{
+			name:         "feed directory with index.xml",
+			path:         "/feed/",
+			wantStatus:   http.StatusOK,
+			wantContains: "<feed/>",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			srv := server.New(server.Config{Dir: dir})
+			req := httptest.NewRequest("GET", tt.path, nil)
+			rec := httptest.NewRecorder()
+
+			srv.Handler().ServeHTTP(rec, req)
+
+			if rec.Code != tt.wantStatus {
+				t.Errorf("path %q: status = %d, want %d", tt.path, rec.Code, tt.wantStatus)
+			}
+
+			if body := rec.Body.String(); !contains(body, tt.wantContains) {
+				t.Errorf("path %q: body = %q, want to contain %q", tt.path, body, tt.wantContains)
+			}
+		})
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
+		(len(s) > 0 && len(substr) > 0 && findSubstring(s, substr)))
+}
+
+func findSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

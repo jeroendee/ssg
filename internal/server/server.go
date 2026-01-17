@@ -88,6 +88,12 @@ type xmlIndexHandler struct {
 
 // ServeHTTP serves index.xml with proper Content-Type when a directory has no index.html.
 func (h *xmlIndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Validate path stays within h.dir to prevent traversal attacks
+	if !h.isPathSafe(r.URL.Path) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
 	// Only handle directory requests (ending with /)
 	if !strings.HasSuffix(r.URL.Path, "/") {
 		h.fs.ServeHTTP(w, r)
@@ -113,4 +119,29 @@ func (h *xmlIndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// No index file found - delegate to FileServer (shows directory listing)
 	h.fs.ServeHTTP(w, r)
+}
+
+// isPathSafe validates that the resolved path stays within h.dir.
+func (h *xmlIndexHandler) isPathSafe(urlPath string) bool {
+	// Reject any path containing .. as defense-in-depth
+	if strings.Contains(urlPath, "..") {
+		return false
+	}
+
+	// Clean and resolve the path
+	cleanPath := filepath.Clean(urlPath)
+	fullPath := filepath.Join(h.dir, cleanPath)
+
+	// Get absolute paths for comparison
+	absDir, err := filepath.Abs(h.dir)
+	if err != nil {
+		return false
+	}
+	absPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		return false
+	}
+
+	// Path is safe if it starts with the base directory (belt and suspenders)
+	return strings.HasPrefix(absPath, absDir)
 }
