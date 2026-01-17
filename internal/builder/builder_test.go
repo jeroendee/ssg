@@ -978,3 +978,167 @@ func TestBuild_EmbeddedStyleCSS_WithOtherAssets(t *testing.T) {
 		t.Errorf("Build() style.css content does not match embedded default\ngot %d bytes, want %d bytes", len(content), len(assets.DefaultStyleCSS()))
 	}
 }
+
+func TestValidateOutputDir(t *testing.T) {
+	t.Parallel()
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("failed to get home dir: %v", err)
+	}
+
+	contentDir := filepath.Join(t.TempDir(), "project", "content")
+	projectRoot := filepath.Dir(contentDir)
+
+	tests := []struct {
+		name       string
+		outputDir  string
+		contentDir string
+		wantErr    bool
+		errContain string
+	}{
+		{
+			name:       "reject empty output directory",
+			outputDir:  "",
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "empty",
+		},
+		{
+			name:       "reject root directory",
+			outputDir:  "/",
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "root",
+		},
+		{
+			name:       "reject home directory",
+			outputDir:  homeDir,
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "home",
+		},
+		{
+			name:       "reject tilde home path",
+			outputDir:  "~",
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "home",
+		},
+		{
+			name:       "reject current directory dot",
+			outputDir:  ".",
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "current",
+		},
+		{
+			name:       "reject parent directory dotdot",
+			outputDir:  "..",
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "parent",
+		},
+		{
+			name:       "reject path resolving to root",
+			outputDir:  "/foo/..",
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "root",
+		},
+		{
+			name:       "reject path resolving to home",
+			outputDir:  filepath.Join(homeDir, "subdir", ".."),
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "home",
+		},
+		{
+			name:       "reject path equal to project root",
+			outputDir:  projectRoot,
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "project",
+		},
+		{
+			name:       "reject path that is parent of content dir",
+			outputDir:  filepath.Dir(projectRoot),
+			contentDir: contentDir,
+			wantErr:    true,
+			errContain: "outside",
+		},
+		{
+			name:       "accept valid output directory",
+			outputDir:  filepath.Join(projectRoot, "public"),
+			contentDir: contentDir,
+			wantErr:    false,
+		},
+		{
+			name:       "accept subdirectory of project",
+			outputDir:  filepath.Join(projectRoot, "dist", "output"),
+			contentDir: contentDir,
+			wantErr:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := ValidateOutputDir(tt.outputDir, tt.contentDir)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("ValidateOutputDir() expected error, got nil")
+					return
+				}
+				if tt.errContain != "" && !strings.Contains(strings.ToLower(err.Error()), tt.errContain) {
+					t.Errorf("ValidateOutputDir() error = %q, should contain %q", err.Error(), tt.errContain)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("ValidateOutputDir() unexpected error = %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestCleanOutputDir_RejectsUnsafePaths(t *testing.T) {
+	t.Parallel()
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("failed to get home dir: %v", err)
+	}
+
+	contentDir := t.TempDir()
+
+	unsafePaths := []string{
+		"",
+		"/",
+		homeDir,
+		".",
+		"..",
+	}
+
+	for _, unsafePath := range unsafePaths {
+		t.Run("reject_"+unsafePath, func(t *testing.T) {
+			t.Parallel()
+
+			cfg := &model.Config{
+				Title:      "Test Site",
+				BaseURL:    "https://example.com",
+				ContentDir: contentDir,
+				OutputDir:  unsafePath,
+			}
+
+			b := New(cfg)
+			err := b.Build()
+
+			if err == nil {
+				t.Errorf("Build() with OutputDir=%q should return error", unsafePath)
+			}
+		})
+	}
+}
