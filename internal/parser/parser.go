@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -23,12 +24,19 @@ type Frontmatter struct {
 }
 
 // MarkdownToHTML converts markdown content to HTML.
+// Deprecated: Use MarkdownToHTMLWithError for proper error handling.
 func MarkdownToHTML(md string) string {
+	html, _ := MarkdownToHTMLWithError(md)
+	return html
+}
+
+// MarkdownToHTMLWithError converts markdown content to HTML and returns any conversion error.
+func MarkdownToHTMLWithError(md string) (string, error) {
 	var buf bytes.Buffer
 	if err := goldmark.Convert([]byte(md), &buf); err != nil {
-		return ""
+		return "", fmt.Errorf("markdown conversion failed: %w", err)
 	}
-	return buf.String()
+	return buf.String(), nil
 }
 
 // ExtractFrontmatter separates YAML frontmatter from markdown content.
@@ -68,10 +76,15 @@ func ParsePage(path string) (*model.Page, error) {
 		template = "page"
 	}
 
+	html, err := MarkdownToHTMLWithError(body)
+	if err != nil {
+		return nil, fmt.Errorf("parsing %s: %w", path, err)
+	}
+
 	return &model.Page{
 		Title:    fm.Title,
 		Slug:     slug,
-		Content:  MarkdownToHTML(body),
+		Content:  html,
 		Path:     "/" + slug + "/",
 		Template: template,
 	}, nil
@@ -97,13 +110,19 @@ func ParsePost(path string) (*model.Post, error) {
 
 	// Try to parse date from filename first
 	if matches := dateFilenameRegex.FindStringSubmatch(filename); matches != nil {
-		postDate, _ = time.Parse("2006-01-02", matches[1])
+		postDate, err = time.Parse("2006-01-02", matches[1])
+		if err != nil {
+			return nil, fmt.Errorf("invalid date in filename %s: %w", filename, err)
+		}
 		slug = matches[2]
 	}
 
 	// Frontmatter date overrides filename date
 	if fm.Date != "" {
-		postDate, _ = time.Parse("2006-01-02", fm.Date)
+		postDate, err = time.Parse("2006-01-02", fm.Date)
+		if err != nil {
+			return nil, fmt.Errorf("invalid date in frontmatter: %w", err)
+		}
 	}
 
 	template := fm.Template
@@ -111,11 +130,16 @@ func ParsePost(path string) (*model.Post, error) {
 		template = "post"
 	}
 
+	html, err := MarkdownToHTMLWithError(body)
+	if err != nil {
+		return nil, fmt.Errorf("parsing %s: %w", path, err)
+	}
+
 	return &model.Post{
 		Page: model.Page{
 			Title:    fm.Title,
 			Slug:     slug,
-			Content:  MarkdownToHTML(body),
+			Content:  html,
 			Path:     "/blog/" + slug + "/",
 			Template: template,
 		},

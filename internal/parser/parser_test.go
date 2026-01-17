@@ -188,3 +188,54 @@ Hello! My name is Jeroen.`
 		t.Errorf("WordCount = %d, want 5", post.WordCount)
 	}
 }
+
+func TestMarkdownToHTML_ReturnsError(t *testing.T) {
+	t.Parallel()
+	// Valid markdown should not return error
+	md := "# Hello"
+	html, err := parser.MarkdownToHTMLWithError(md)
+	if err != nil {
+		t.Errorf("MarkdownToHTMLWithError() unexpected error = %v", err)
+	}
+	if !strings.Contains(html, "<h1>Hello</h1>") {
+		t.Errorf("expected <h1>Hello</h1>, got %s", html)
+	}
+}
+
+func TestParsePost_InvalidFrontmatterDate(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	file := filepath.Join(dir, "my-post.md")
+	content := `---
+title: "My Post"
+date: "not-a-date"
+---
+# Content`
+	if err := os.WriteFile(file, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := parser.ParsePost(file)
+	if err == nil {
+		t.Error("ParsePost() expected error for invalid frontmatter date")
+	}
+}
+
+func TestParsePost_InvalidFilenameDate(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	// Invalid date: month 13 doesn't exist
+	file := filepath.Join(dir, "2021-13-45-my-post.md")
+	content := `---
+title: "My Post"
+---
+# Content`
+	if err := os.WriteFile(file, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := parser.ParsePost(file)
+	if err == nil {
+		t.Error("ParsePost() expected error for invalid filename date")
+	}
+}
