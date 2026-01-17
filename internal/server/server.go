@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Config holds server configuration settings.
@@ -49,7 +50,13 @@ func (s *Server) Start() error {
 
 	s.mu.Lock()
 	s.addr = ln.Addr().String()
-	s.server = &http.Server{Handler: s.handler}
+	s.server = &http.Server{
+		Handler: s.handler,
+		// Prevents slowloris attacks by limiting time to read request headers
+		ReadHeaderTimeout: 10 * time.Second,
+		// Closes idle keepalive connections after this duration
+		IdleTimeout: 120 * time.Second,
+	}
 	s.mu.Unlock()
 
 	return s.server.Serve(ln)
@@ -66,6 +73,14 @@ func (s *Server) Addr() string {
 // Handler returns the HTTP handler used by the server.
 func (s *Server) Handler() http.Handler {
 	return s.handler
+}
+
+// HTTPServer returns the underlying http.Server instance.
+// Returns nil if the server has not been started.
+func (s *Server) HTTPServer() *http.Server {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.server
 }
 
 // Shutdown gracefully stops the server, allowing in-flight requests to complete.
@@ -88,6 +103,12 @@ type xmlIndexHandler struct {
 
 // ServeHTTP serves index.xml with proper Content-Type when a directory has no index.html.
 func (h *xmlIndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Validate path stays within h.dir to prevent traversal attacks
+	if !h.isPathSafe(r.URL.Path) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
 	// Only handle directory requests (ending with /)
 	if !strings.HasSuffix(r.URL.Path, "/") {
 		h.fs.ServeHTTP(w, r)
@@ -113,4 +134,29 @@ func (h *xmlIndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// No index file found - delegate to FileServer (shows directory listing)
 	h.fs.ServeHTTP(w, r)
+}
+
+// isPathSafe validates that the resolved path stays within h.dir.
+func (h *xmlIndexHandler) isPathSafe(urlPath string) bool {
+	// Reject any path containing .. as defense-in-depth
+	if strings.Contains(urlPath, "..") {
+		return false
+	}
+
+	// Clean and resolve the path
+	cleanPath := filepath.Clean(urlPath)
+	fullPath := filepath.Join(h.dir, cleanPath)
+
+	// Get absolute paths for comparison
+	absDir, err := filepath.Abs(h.dir)
+	if err != nil {
+		return false
+	}
+	absPath, err := filepath.Abs(fullPath)
+	if err != nil {
+		return false
+	}
+
+	// Path is safe if it starts with the base directory (belt and suspenders)
+	return strings.HasPrefix(absPath, absDir)
 }

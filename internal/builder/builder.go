@@ -2,6 +2,7 @@ package builder
 
 import (
 	"encoding/xml"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -203,8 +204,86 @@ func (b *Builder) Build() error {
 	return nil
 }
 
+// ValidateOutputDir checks if the output directory is safe for deletion.
+// It rejects paths that could cause catastrophic data loss.
+func ValidateOutputDir(outputDir, contentDir string) error {
+	if outputDir == "" {
+		return errors.New("output directory cannot be empty")
+	}
+
+	// Expand tilde to home directory
+	if outputDir == "~" || strings.HasPrefix(outputDir, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+		if outputDir == "~" {
+			outputDir = home
+		} else {
+			outputDir = filepath.Join(home, outputDir[2:])
+		}
+	}
+
+	// Clean the path to resolve . and .. components
+	cleanPath := filepath.Clean(outputDir)
+
+	// Reject current directory
+	if cleanPath == "." {
+		return errors.New("output directory cannot be current directory")
+	}
+
+	// Reject parent directory traversal
+	if cleanPath == ".." || strings.HasPrefix(cleanPath, ".."+string(filepath.Separator)) {
+		return errors.New("output directory cannot be parent directory")
+	}
+
+	// Get absolute path for comparison
+	absPath, err := filepath.Abs(cleanPath)
+	if err != nil {
+		return err
+	}
+
+	// Reject root directory
+	if absPath == "/" {
+		return errors.New("output directory cannot be root directory")
+	}
+
+	// Reject home directory
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	if absPath == home {
+		return errors.New("output directory cannot be home directory")
+	}
+
+	// Get project root (parent of content directory)
+	absContentDir, err := filepath.Abs(contentDir)
+	if err != nil {
+		return err
+	}
+	projectRoot := filepath.Dir(absContentDir)
+
+	// Reject if output equals project root
+	if absPath == projectRoot {
+		return errors.New("output directory cannot be project root")
+	}
+
+	// Reject if output is outside or parent of project root
+	if !strings.HasPrefix(absPath, projectRoot+string(filepath.Separator)) {
+		return errors.New("output directory is outside project root")
+	}
+
+	return nil
+}
+
 // cleanOutputDir removes and recreates the output directory.
 func (b *Builder) cleanOutputDir() error {
+	// Validate output directory before deletion
+	if err := ValidateOutputDir(b.cfg.OutputDir, b.cfg.ContentDir); err != nil {
+		return err
+	}
+
 	// Remove existing output directory
 	if _, err := os.Stat(b.cfg.OutputDir); err == nil {
 		if err := os.RemoveAll(b.cfg.OutputDir); err != nil {
