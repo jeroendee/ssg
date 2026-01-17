@@ -433,3 +433,42 @@ func findSubstring(s, substr string) bool {
 	}
 	return false
 }
+
+func TestServerTimeouts(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	srv := server.New(server.Config{Port: 0, Dir: dir})
+
+	// Start server in goroutine
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- srv.Start()
+	}()
+
+	// Wait for server to be ready
+	time.Sleep(50 * time.Millisecond)
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		srv.Shutdown(ctx)
+	}()
+
+	// Get the underlying http.Server to verify timeouts
+	httpServer := srv.HTTPServer()
+	if httpServer == nil {
+		t.Fatal("HTTPServer() returned nil")
+	}
+
+	// Verify ReadHeaderTimeout is set (prevents slowloris attacks)
+	wantReadHeaderTimeout := 10 * time.Second
+	if httpServer.ReadHeaderTimeout != wantReadHeaderTimeout {
+		t.Errorf("ReadHeaderTimeout = %v, want %v", httpServer.ReadHeaderTimeout, wantReadHeaderTimeout)
+	}
+
+	// Verify IdleTimeout is set (closes idle keepalive connections)
+	wantIdleTimeout := 120 * time.Second
+	if httpServer.IdleTimeout != wantIdleTimeout {
+		t.Errorf("IdleTimeout = %v, want %v", httpServer.IdleTimeout, wantIdleTimeout)
+	}
+}

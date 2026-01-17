@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Config holds server configuration settings.
@@ -49,7 +50,13 @@ func (s *Server) Start() error {
 
 	s.mu.Lock()
 	s.addr = ln.Addr().String()
-	s.server = &http.Server{Handler: s.handler}
+	s.server = &http.Server{
+		Handler: s.handler,
+		// Prevents slowloris attacks by limiting time to read request headers
+		ReadHeaderTimeout: 10 * time.Second,
+		// Closes idle keepalive connections after this duration
+		IdleTimeout: 120 * time.Second,
+	}
 	s.mu.Unlock()
 
 	return s.server.Serve(ln)
@@ -66,6 +73,14 @@ func (s *Server) Addr() string {
 // Handler returns the HTTP handler used by the server.
 func (s *Server) Handler() http.Handler {
 	return s.handler
+}
+
+// HTTPServer returns the underlying http.Server instance.
+// Returns nil if the server has not been started.
+func (s *Server) HTTPServer() *http.Server {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.server
 }
 
 // Shutdown gracefully stops the server, allowing in-flight requests to complete.
