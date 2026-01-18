@@ -776,6 +776,55 @@ func TestBuild_GeneratesSitemap(t *testing.T) {
 	}
 }
 
+func TestBuild_SitemapHomepageURL(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// Create home.md (homepage with empty slug)
+	writeFile(t, filepath.Join(contentDir, "home.md"), "---\ntitle: Home\n---\nWelcome")
+	// Create a regular page for comparison
+	writeFile(t, filepath.Join(contentDir, "about.md"), "---\ntitle: About\n---\nAbout content")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	sitemapPath := filepath.Join(outputDir, "sitemap.xml")
+	content, err := os.ReadFile(sitemapPath)
+	if err != nil {
+		t.Fatalf("failed to read sitemap.xml: %v", err)
+	}
+
+	sitemapStr := string(content)
+
+	// Homepage must appear as baseURL/ without double slashes
+	if !strings.Contains(sitemapStr, "<loc>https://example.com/</loc>") {
+		t.Errorf("sitemap.xml homepage URL incorrect. Want <loc>https://example.com/</loc>\ngot:\n%s", sitemapStr)
+	}
+
+	// Must NOT contain double slashes (except in http://)
+	// Check for the pattern that would indicate double slash in path: .com//
+	if strings.Contains(sitemapStr, "example.com//") {
+		t.Error("sitemap.xml contains double slashes in homepage URL")
+	}
+
+	// Regular page should still work correctly
+	if !strings.Contains(sitemapStr, "https://example.com/about/") {
+		t.Error("sitemap.xml missing about page URL")
+	}
+}
+
 func TestBuild_SitemapWithNoPosts(t *testing.T) {
 	t.Parallel()
 

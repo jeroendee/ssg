@@ -458,8 +458,15 @@ func (b *Builder) generateSitemap(site model.Site) error {
 
 	// Add pages (without lastmod)
 	for _, page := range site.Pages {
+		var loc string
+		if page.Slug == "" {
+			// Homepage: use baseURL/ without double slashes
+			loc = site.BaseURL + "/"
+		} else {
+			loc = site.BaseURL + "/" + page.Slug + "/"
+		}
 		urls = append(urls, sitemapURL{
-			Loc: site.BaseURL + "/" + page.Slug + "/",
+			Loc: loc,
 		})
 	}
 
