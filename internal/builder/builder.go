@@ -78,6 +78,17 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 		}
 
 		path := filepath.Join(b.cfg.ContentDir, entry.Name())
+
+		// Handle home.md specially - store content in Site.HomeContent
+		if entry.Name() == "home.md" {
+			page, err := parser.ParsePage(path)
+			if err != nil {
+				return nil, err
+			}
+			site.HomeContent = page.Content
+			continue
+		}
+
 		page, err := parser.ParsePage(path)
 		if err != nil {
 			return nil, err
