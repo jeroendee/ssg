@@ -71,6 +71,9 @@ func ParsePage(path string) (*model.Page, error) {
 	}
 
 	slug := strings.TrimSuffix(filepath.Base(path), ".md")
+	if slug == "home" {
+		slug = ""
+	}
 	template := fm.Template
 	if template == "" {
 		template = "page"
@@ -81,11 +84,16 @@ func ParsePage(path string) (*model.Page, error) {
 		return nil, fmt.Errorf("parsing %s: %w", path, err)
 	}
 
+	pagePath := "/" + slug + "/"
+	if slug == "" {
+		pagePath = "/"
+	}
+
 	return &model.Page{
 		Title:    fm.Title,
 		Slug:     slug,
 		Content:  html,
-		Path:     "/" + slug + "/",
+		Path:     pagePath,
 		Template: template,
 	}, nil
 }
