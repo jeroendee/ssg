@@ -17,10 +17,9 @@ import (
 
 // frontmatter holds metadata extracted from markdown files.
 type frontmatter struct {
-	Title    string `yaml:"title"`
-	Template string `yaml:"template"`
-	Summary  string `yaml:"summary"`
-	Date     string `yaml:"date"`
+	Title   string `yaml:"title"`
+	Summary string `yaml:"summary"`
+	Date    string `yaml:"date"`
 }
 
 // MarkdownToHTMLWithError converts markdown content to HTML and returns any conversion error.
@@ -67,10 +66,6 @@ func ParsePage(path string) (*model.Page, error) {
 	if slug == "home" {
 		slug = ""
 	}
-	template := fm.Template
-	if template == "" {
-		template = "page"
-	}
 
 	html, err := MarkdownToHTMLWithError(body)
 	if err != nil {
@@ -83,11 +78,10 @@ func ParsePage(path string) (*model.Page, error) {
 	}
 
 	return &model.Page{
-		Title:    fm.Title,
-		Slug:     slug,
-		Content:  html,
-		Path:     pagePath,
-		Template: template,
+		Title:   fm.Title,
+		Slug:    slug,
+		Content: html,
+		Path:    pagePath,
 	}, nil
 }
 
@@ -126,11 +120,6 @@ func ParsePost(path string) (*model.Post, error) {
 		}
 	}
 
-	template := fm.Template
-	if template == "" {
-		template = "post"
-	}
-
 	html, err := MarkdownToHTMLWithError(body)
 	if err != nil {
 		return nil, fmt.Errorf("parsing %s: %w", path, err)
@@ -138,11 +127,10 @@ func ParsePost(path string) (*model.Post, error) {
 
 	return &model.Post{
 		Page: model.Page{
-			Title:    fm.Title,
-			Slug:     slug,
-			Content:  html,
-			Path:     "/blog/" + slug + "/",
-			Template: template,
+			Title:   fm.Title,
+			Slug:    slug,
+			Content: html,
+			Path:    "/blog/" + slug + "/",
 		},
 		Date:      postDate,
 		Summary:   fm.Summary,

@@ -31,7 +31,6 @@ func TestParsePage(t *testing.T) {
 	file := filepath.Join(dir, "about.md")
 	content := `---
 title: "About Me"
-template: "page"
 ---
 # About
 
@@ -49,9 +48,6 @@ This is the about page.`
 	}
 	if page.Slug != "about" {
 		t.Errorf("Slug = %q, want %q", page.Slug, "about")
-	}
-	if page.Template != "page" {
-		t.Errorf("Template = %q, want %q", page.Template, "page")
 	}
 	if !strings.Contains(page.Content, "<h1>About</h1>") {
 		t.Errorf("Content should have HTML, got %q", page.Content)

@@ -179,15 +179,6 @@ title: About
 Your page content here in **markdown**.
 ```
 
-You can also specify a custom template:
-
-```markdown
----
-title: About
-template: custom
----
-```
-
 Pages become clean URLs: `content/about.md` → `/about/`
 
 ### Blog Posts
@@ -197,12 +188,22 @@ Blog posts go in the `content/blog/` directory. Filenames must follow the format
 ```markdown
 ---
 title: My First Post
+summary: A brief description shown on the blog listing page.
 ---
 
 Your post content here.
 ```
 
 The date is extracted from the filename: `2024-01-15-my-first-post.md` → published January 15, 2024, accessible at `/blog/my-first-post/`
+
+You can override the filename date using frontmatter:
+
+```markdown
+---
+title: My First Post
+date: 2024-02-20
+---
+```
 
 ## Styling
 

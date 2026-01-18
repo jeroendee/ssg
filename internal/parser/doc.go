@@ -11,7 +11,6 @@
 //
 //	---
 //	title: My Page Title
-//	template: custom-template
 //	summary: Brief description for RSS feeds
 //	date: 2024-01-15
 //	---
