@@ -60,6 +60,12 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 		return nil, err
 	}
 
+	// Verify home.md exists - homepage is required
+	homePath := filepath.Join(b.cfg.ContentDir, "home.md")
+	if _, err := os.Stat(homePath); os.IsNotExist(err) {
+		return nil, errors.New("home.md not found in content directory - homepage is required")
+	}
+
 	// Scan for pages (markdown files in root content directory)
 	rootEntries, err := os.ReadDir(b.cfg.ContentDir)
 	if err != nil {
@@ -74,6 +80,10 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 			continue
 		}
 		if isIndexFile(entry.Name()) {
+			continue
+		}
+		// Skip home.md - it's handled separately as the homepage
+		if entry.Name() == "home.md" {
 			continue
 		}
 

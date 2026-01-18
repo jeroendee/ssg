@@ -150,6 +150,9 @@ func TestBuildCommand_WithValidConfig(t *testing.T) {
 	outputDir := filepath.Join(tmpDir, "public")
 	os.MkdirAll(contentDir, 0755)
 
+	// Create required home.md
+	os.WriteFile(filepath.Join(contentDir, "home.md"), []byte("---\ntitle: Home\n---\nWelcome"), 0644)
+
 	// Create config file with correct YAML structure
 	configPath := filepath.Join(tmpDir, "ssg.yaml")
 	configContent := `site:
@@ -188,6 +191,9 @@ func TestBuildCommand_WithOverrideFlags(t *testing.T) {
 	contentDir := filepath.Join(tmpDir, "content")
 	outputDir := filepath.Join(tmpDir, "custom-output")
 	os.MkdirAll(contentDir, 0755)
+
+	// Create required home.md
+	os.WriteFile(filepath.Join(contentDir, "home.md"), []byte("---\ntitle: Home\n---\nWelcome"), 0644)
 
 	// Create config file with different output dir
 	configPath := filepath.Join(tmpDir, "ssg.yaml")
@@ -348,8 +354,8 @@ func TestServeCommand_WithBuildFlag(t *testing.T) {
 	outputDir := filepath.Join(tmpDir, "public")
 	os.MkdirAll(contentDir, 0755)
 
-	// Create a simple markdown file
-	os.WriteFile(filepath.Join(contentDir, "index.md"), []byte("# Hello"), 0644)
+	// Create required home.md
+	os.WriteFile(filepath.Join(contentDir, "home.md"), []byte("---\ntitle: Home\n---\nWelcome"), 0644)
 
 	// Create config file
 	configPath := filepath.Join(tmpDir, "ssg.yaml")
@@ -482,8 +488,8 @@ func TestServeCommand_WithBuildFlag_CopiesAssets(t *testing.T) {
 	os.MkdirAll(contentDir, 0755)
 	os.MkdirAll(assetsDir, 0755)
 
-	// Create a simple markdown file
-	os.WriteFile(filepath.Join(contentDir, "index.md"), []byte("# Hello"), 0644)
+	// Create required home.md
+	os.WriteFile(filepath.Join(contentDir, "home.md"), []byte("---\ntitle: Home\n---\nWelcome"), 0644)
 
 	// Create CSS file in assets
 	cssContent := "body { color: red; }"
@@ -632,6 +638,9 @@ func TestBuildCommand_VersionFlowsToFooter(t *testing.T) {
 	outputDir := filepath.Join(tmpDir, "public")
 	os.MkdirAll(contentDir, 0755)
 
+	// Create required home.md
+	os.WriteFile(filepath.Join(contentDir, "home.md"), []byte("---\ntitle: Home\n---\nWelcome"), 0644)
+
 	// Create a simple page
 	pageContent := `---
 title: Test Page
@@ -680,6 +689,9 @@ func TestServeCommand_WithBuild_VersionFlowsToFooter(t *testing.T) {
 	contentDir := filepath.Join(tmpDir, "content")
 	outputDir := filepath.Join(tmpDir, "public")
 	os.MkdirAll(contentDir, 0755)
+
+	// Create required home.md
+	os.WriteFile(filepath.Join(contentDir, "home.md"), []byte("---\ntitle: Home\n---\nWelcome"), 0644)
 
 	// Create a simple page
 	pageContent := `---

@@ -25,6 +25,7 @@ func TestScanContent(t *testing.T) {
 			name: "scans pages and posts",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
+				writeFile(t, filepath.Join(dir, "home.md"), "---\ntitle: Home\n---\nWelcome")
 				// Create pages
 				writeFile(t, filepath.Join(dir, "about.md"), "---\ntitle: About\n---\nAbout content")
 				writeFile(t, filepath.Join(dir, "contact.md"), "---\ntitle: Contact\n---\nContact content")
@@ -39,9 +40,11 @@ func TestScanContent(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name: "handles empty content directory",
+			name: "handles content directory with only home.md",
 			setup: func(t *testing.T) string {
-				return t.TempDir()
+				dir := t.TempDir()
+				writeFile(t, filepath.Join(dir, "home.md"), "---\ntitle: Home\n---\nWelcome")
+				return dir
 			},
 			wantPages: 0,
 			wantPosts: 0,
@@ -51,6 +54,7 @@ func TestScanContent(t *testing.T) {
 			name: "handles pages only",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
+				writeFile(t, filepath.Join(dir, "home.md"), "---\ntitle: Home\n---\nWelcome")
 				writeFile(t, filepath.Join(dir, "about.md"), "---\ntitle: About\n---\nAbout content")
 				return dir
 			},
@@ -62,6 +66,7 @@ func TestScanContent(t *testing.T) {
 			name: "handles posts only",
 			setup: func(t *testing.T) string {
 				dir := t.TempDir()
+				writeFile(t, filepath.Join(dir, "home.md"), "---\ntitle: Home\n---\nWelcome")
 				os.MkdirAll(filepath.Join(dir, "blog"), 0755)
 				writeFile(t, filepath.Join(dir, "blog", "2021-03-26-post.md"), "---\ntitle: Post\n---\nContent")
 				return dir
@@ -124,6 +129,7 @@ func TestScanContent_PostsSortedByDate(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
+	writeHomeMd(t, dir)
 	os.MkdirAll(filepath.Join(dir, "blog"), 0755)
 	// Create posts in non-chronological order
 	writeFile(t, filepath.Join(dir, "blog", "2021-01-01-old.md"), "---\ntitle: Old Post\n---\nOld")
@@ -162,6 +168,7 @@ func TestScanContent_SiteMetadata(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
+	writeHomeMd(t, dir)
 	cfg := &model.Config{
 		Title:   "Quality Shepherd",
 		BaseURL: "https://www.qualityshepherd.nl",
@@ -197,6 +204,7 @@ func TestScanContent_IgnoresNonMarkdownFiles(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
+	writeHomeMd(t, dir)
 	writeFile(t, filepath.Join(dir, "about.md"), "---\ntitle: About\n---\nAbout")
 	writeFile(t, filepath.Join(dir, "readme.txt"), "not markdown")
 	writeFile(t, filepath.Join(dir, "image.png"), "binary data")
@@ -222,6 +230,7 @@ func TestScanContent_IgnoresIndexFiles(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
+	writeHomeMd(t, dir)
 	writeFile(t, filepath.Join(dir, "about.md"), "---\ntitle: About\n---\nAbout")
 	writeFile(t, filepath.Join(dir, "_index.md"), "---\ntitle: Home\n---\nHome")
 	os.MkdirAll(filepath.Join(dir, "blog"), 0755)
@@ -257,10 +266,17 @@ func writeFile(t *testing.T, path, content string) {
 	}
 }
 
+// writeHomeMd creates a minimal home.md in the given directory
+func writeHomeMd(t *testing.T, dir string) {
+	t.Helper()
+	writeFile(t, filepath.Join(dir, "home.md"), "---\ntitle: Home\n---\nWelcome")
+}
+
 func TestBuild_CreatesOutputDirectory(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := filepath.Join(t.TempDir(), "public")
 
 	cfg := &model.Config{
@@ -285,6 +301,7 @@ func TestBuild_CleansOutputDirectory(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	// Create a file that should be cleaned
@@ -313,6 +330,7 @@ func TestBuild_WritesPageWithCleanURL(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	writeFile(t, filepath.Join(contentDir, "about.md"), "---\ntitle: About\n---\nAbout content")
@@ -349,6 +367,7 @@ func TestBuild_WritesPostWithCleanURL(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	os.MkdirAll(filepath.Join(contentDir, "blog"), 0755)
@@ -387,6 +406,7 @@ func TestBuild_CopiesStaticAssets(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 	assetsDir := t.TempDir()
 
@@ -423,6 +443,7 @@ func TestBuild_GeneratesHomepage(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	cfg := &model.Config{
@@ -456,6 +477,7 @@ func TestBuild_Generates404Page(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	cfg := &model.Config{
@@ -489,6 +511,7 @@ func TestBuild_GeneratesBlogListing(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	os.MkdirAll(filepath.Join(contentDir, "blog"), 0755)
@@ -531,6 +554,7 @@ func TestScanContent_DescriptionFromConfig(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
+	writeHomeMd(t, dir)
 	cfg := &model.Config{
 		Title:       "Test Site",
 		BaseURL:     "https://example.com",
@@ -553,6 +577,7 @@ func TestScanContent_DescriptionFallsBackToTitle(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
+	writeHomeMd(t, dir)
 	cfg := &model.Config{
 		Title:       "Test Site",
 		BaseURL:     "https://example.com",
@@ -575,6 +600,7 @@ func TestBuild_GeneratesRSSFeed(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	os.MkdirAll(filepath.Join(contentDir, "blog"), 0755)
@@ -616,6 +642,7 @@ func TestBuild_SkipsFeedWhenNoPosts(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	cfg := &model.Config{
@@ -641,6 +668,7 @@ func TestBuild_GeneratesRobotsTxt(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	cfg := &model.Config{
@@ -676,6 +704,7 @@ func TestBuild_GeneratesSitemap(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	// Create pages and posts
@@ -750,6 +779,7 @@ func TestBuild_SitemapWithNoPosts(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	// Create only pages
@@ -824,6 +854,7 @@ func TestBuild_PassesVersionToRenderer(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	writeFile(t, filepath.Join(contentDir, "about.md"), "---\ntitle: About\n---\nAbout content")
@@ -861,6 +892,7 @@ func TestBuild_EmbeddedStyleCSS_NoAssetsDir(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 
 	cfg := &model.Config{
@@ -896,6 +928,7 @@ func TestBuild_CustomStyleCSS_Override(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 	assetsDir := t.TempDir()
 
@@ -932,6 +965,7 @@ func TestBuild_EmbeddedStyleCSS_WithOtherAssets(t *testing.T) {
 	t.Parallel()
 
 	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
 	outputDir := t.TempDir()
 	assetsDir := t.TempDir()
 
@@ -1101,6 +1135,33 @@ func TestValidateOutputDir(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestBuild_HomeMdMissing(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// No home.md exists in content directory
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	err := b.Build()
+
+	if err == nil {
+		t.Fatal("Build() should fail when home.md is missing")
+	}
+
+	wantMsg := "home.md not found in content directory"
+	if !strings.Contains(err.Error(), wantMsg) {
+		t.Errorf("Build() error = %q, want to contain %q", err.Error(), wantMsg)
 	}
 }
 
