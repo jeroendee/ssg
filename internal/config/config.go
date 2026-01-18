@@ -27,6 +27,9 @@ type yamlConfig struct {
 		Title string `yaml:"title"`
 		URL   string `yaml:"url"`
 	} `yaml:"navigation"`
+	Analytics struct {
+		GoatCounter string `yaml:"goatcounter"`
+	} `yaml:"analytics"`
 }
 
 // Options provides CLI flag overrides for configuration.
@@ -70,6 +73,9 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 		ContentDir:  yc.Build.Content,
 		OutputDir:   yc.Build.Output,
 		AssetsDir:   yc.Build.Assets,
+		Analytics: model.Analytics{
+			GoatCounter: yc.Analytics.GoatCounter,
+		},
 	}
 
 	// Apply defaults

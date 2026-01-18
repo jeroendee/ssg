@@ -344,3 +344,47 @@ build:
 		t.Errorf("AssetsDir = %q, want %q", cfg.AssetsDir, "cli-assets")
 	}
 }
+
+func TestLoad_WithGoatCounter(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+analytics:
+  goatcounter: "aishepherd"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Analytics.GoatCounter != "aishepherd" {
+		t.Errorf("Analytics.GoatCounter = %q, want %q", cfg.Analytics.GoatCounter, "aishepherd")
+	}
+}
+
+func TestLoad_WithoutGoatCounter(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Analytics.GoatCounter != "" {
+		t.Errorf("Analytics.GoatCounter = %q, want empty string", cfg.Analytics.GoatCounter)
+	}
+}

@@ -1604,3 +1604,77 @@ func TestRenderer_SetVersion(t *testing.T) {
 		t.Error("RenderBase() should include version in output")
 	}
 }
+
+func TestRenderBase_GoatCounterAnalytics(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		site       model.Site
+		wantScript bool
+		wantCode   string
+	}{
+		{
+			name: "includes GoatCounter script when configured",
+			site: model.Site{
+				Title:   "Test Site",
+				BaseURL: "https://example.com",
+				Analytics: model.Analytics{
+					GoatCounter: "aishepherd",
+				},
+			},
+			wantScript: true,
+			wantCode:   "aishepherd",
+		},
+		{
+			name: "no GoatCounter script when not configured",
+			site: model.Site{
+				Title:   "Test Site",
+				BaseURL: "https://example.com",
+			},
+			wantScript: false,
+		},
+		{
+			name: "no GoatCounter script when empty string",
+			site: model.Site{
+				Title:   "Test Site",
+				BaseURL: "https://example.com",
+				Analytics: model.Analytics{
+					GoatCounter: "",
+				},
+			},
+			wantScript: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			r, err := New()
+			if err != nil {
+				t.Fatalf("New() error = %v", err)
+			}
+
+			got, err := r.RenderBase(tt.site, "Test Content")
+			if err != nil {
+				t.Fatalf("RenderBase() error = %v", err)
+			}
+
+			hasGoatCounter := strings.Contains(got, "goatcounter.com/count")
+			if tt.wantScript && !hasGoatCounter {
+				t.Error("RenderBase() should include GoatCounter script")
+			}
+			if !tt.wantScript && hasGoatCounter {
+				t.Error("RenderBase() should not include GoatCounter script")
+			}
+
+			if tt.wantScript && tt.wantCode != "" {
+				wantURL := tt.wantCode + ".goatcounter.com"
+				if !strings.Contains(got, wantURL) {
+					t.Errorf("RenderBase() should include site code %q in GoatCounter URL", tt.wantCode)
+				}
+			}
+		})
+	}
+}

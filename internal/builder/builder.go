@@ -52,6 +52,7 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 		Logo:        b.cfg.Logo,
 		Favicon:     b.cfg.Favicon,
 		Navigation:  b.cfg.Navigation,
+		Analytics:   b.cfg.Analytics,
 	}
 
 	// Check if content directory exists

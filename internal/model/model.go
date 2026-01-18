@@ -12,6 +12,11 @@ type NavItem struct {
 	URL   string
 }
 
+// Analytics holds analytics configuration.
+type Analytics struct {
+	GoatCounter string
+}
+
 // Page represents a static page.
 type Page struct {
 	Title    string
@@ -40,6 +45,7 @@ type Site struct {
 	Navigation  []NavItem
 	Pages       []Page
 	Posts       []Post
+	Analytics   Analytics
 }
 
 // Config holds site configuration loaded from ssg.yaml.
@@ -54,6 +60,7 @@ type Config struct {
 	OutputDir   string
 	AssetsDir   string
 	Navigation  []NavItem
+	Analytics   Analytics
 }
 
 // FaviconMIMEType returns the MIME type for the favicon based on file extension.
