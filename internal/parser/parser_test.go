@@ -239,3 +239,29 @@ title: "My Post"
 		t.Error("ParsePost() expected error for invalid filename date")
 	}
 }
+
+func TestParsePage_HomeMdGetsEmptySlug(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	file := filepath.Join(dir, "home.md")
+	content := `---
+title: "Home"
+---
+# Welcome
+
+This is the homepage content.`
+	if err := os.WriteFile(file, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	page, err := parser.ParsePage(file)
+	if err != nil {
+		t.Fatalf("ParsePage() error = %v", err)
+	}
+	if page.Slug != "" {
+		t.Errorf("Slug = %q, want empty string for home.md", page.Slug)
+	}
+	if page.Path != "/" {
+		t.Errorf("Path = %q, want %q for home.md", page.Path, "/")
+	}
+}
