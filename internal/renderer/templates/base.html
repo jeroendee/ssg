@@ -3,8 +3,14 @@
 {{template "_header.html" .}}
     <main>
         {{if eq .PageType "home"}}
+        {{if .HomeContent}}
+        <div class="home-content">
+            {{.HomeContent}}
+        </div>
+        {{else}}
         <h1>Welcome</h1>
         <p>Welcome to {{.Site.Title}}</p>
+        {{end}}
         {{else if eq .PageType "page"}}
         <h1>{{.Page.Title}}</h1>
         <div class="content">

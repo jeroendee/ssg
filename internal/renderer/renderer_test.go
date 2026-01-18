@@ -1605,6 +1605,70 @@ func TestRenderer_SetVersion(t *testing.T) {
 	}
 }
 
+func TestRenderHome_HomeContent(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		site        model.Site
+		wantContent string
+		wantAbsent  string
+	}{
+		{
+			name: "renders home content when set",
+			site: model.Site{
+				Title:       "Test Site",
+				BaseURL:     "https://example.com",
+				HomeContent: "<p>Welcome to my site!</p>",
+			},
+			wantContent: "<p>Welcome to my site!</p>",
+		},
+		{
+			name: "handles empty home content",
+			site: model.Site{
+				Title:       "Test Site",
+				BaseURL:     "https://example.com",
+				HomeContent: "",
+			},
+			wantAbsent: "HomeContent",
+		},
+		{
+			name: "renders home content with markdown-converted HTML",
+			site: model.Site{
+				Title:       "Test Site",
+				BaseURL:     "https://example.com",
+				HomeContent: "<h2>About Me</h2>\n<p>I am a developer.</p>",
+			},
+			wantContent: "<h2>About Me</h2>",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			r, err := New()
+			if err != nil {
+				t.Fatalf("New() error = %v", err)
+			}
+
+			got, err := r.RenderHome(tt.site)
+			if err != nil {
+				t.Fatalf("RenderHome() error = %v", err)
+			}
+
+			if tt.wantContent != "" && !strings.Contains(got, tt.wantContent) {
+				t.Errorf("RenderHome() missing home content %q", tt.wantContent)
+			}
+
+			// Verify the output is still valid HTML
+			if !strings.Contains(got, "<!DOCTYPE html>") {
+				t.Error("RenderHome() missing DOCTYPE")
+			}
+		})
+	}
+}
+
 func TestRenderBase_GoatCounterAnalytics(t *testing.T) {
 	t.Parallel()
 
