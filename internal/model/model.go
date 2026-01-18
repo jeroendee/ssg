@@ -19,11 +19,10 @@ type Analytics struct {
 
 // Page represents a static page.
 type Page struct {
-	Title    string
-	Slug     string
-	Content  string
-	Path     string
-	Template string
+	Title   string
+	Slug    string
+	Content string
+	Path    string
 }
 
 // Post represents a blog post with date and summary.

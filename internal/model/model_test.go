@@ -24,11 +24,10 @@ func TestNavItem(t *testing.T) {
 func TestPage(t *testing.T) {
 	t.Parallel()
 	page := model.Page{
-		Title:    "About",
-		Slug:     "about",
-		Content:  "<p>About content</p>",
-		Path:     "/about/",
-		Template: "page",
+		Title:   "About",
+		Slug:    "about",
+		Content: "<p>About content</p>",
+		Path:    "/about/",
 	}
 	if page.Title != "About" {
 		t.Errorf("Page.Title = %q, want %q", page.Title, "About")
@@ -42,9 +41,6 @@ func TestPage(t *testing.T) {
 	if page.Path != "/about/" {
 		t.Errorf("Page.Path = %q, want %q", page.Path, "/about/")
 	}
-	if page.Template != "page" {
-		t.Errorf("Page.Template = %q, want %q", page.Template, "page")
-	}
 }
 
 func TestPost(t *testing.T) {
@@ -52,11 +48,10 @@ func TestPost(t *testing.T) {
 	date := time.Date(2021, 3, 26, 0, 0, 0, 0, time.UTC)
 	post := model.Post{
 		Page: model.Page{
-			Title:    "My First Post",
-			Slug:     "my-first-post",
-			Content:  "<p>Post content</p>",
-			Path:     "/blog/my-first-post/",
-			Template: "post",
+			Title:   "My First Post",
+			Slug:    "my-first-post",
+			Content: "<p>Post content</p>",
+			Path:    "/blog/my-first-post/",
 		},
 		Date:    date,
 		Summary: "A summary of my first post",
