@@ -13,54 +13,15 @@ import (
 func TestParseMarkdown(t *testing.T) {
 	t.Parallel()
 	md := "# Hello\n\nThis is **bold** text."
-	html := parser.MarkdownToHTML(md)
+	html, err := parser.MarkdownToHTMLWithError(md)
+	if err != nil {
+		t.Fatalf("MarkdownToHTMLWithError() error = %v", err)
+	}
 	if !strings.Contains(html, "<h1>Hello</h1>") {
 		t.Errorf("expected <h1>Hello</h1>, got %s", html)
 	}
 	if !strings.Contains(html, "<strong>bold</strong>") {
 		t.Errorf("expected <strong>bold</strong>, got %s", html)
-	}
-}
-
-func TestExtractFrontmatter(t *testing.T) {
-	t.Parallel()
-	content := `---
-title: "My Page"
-template: "custom"
-summary: "A brief summary"
----
-# Content here`
-
-	fm, body, err := parser.ExtractFrontmatter(content)
-	if err != nil {
-		t.Fatalf("ExtractFrontmatter() error = %v", err)
-	}
-	if fm.Title != "My Page" {
-		t.Errorf("Title = %q, want %q", fm.Title, "My Page")
-	}
-	if fm.Template != "custom" {
-		t.Errorf("Template = %q, want %q", fm.Template, "custom")
-	}
-	if fm.Summary != "A brief summary" {
-		t.Errorf("Summary = %q, want %q", fm.Summary, "A brief summary")
-	}
-	if !strings.Contains(body, "# Content here") {
-		t.Errorf("body should contain content, got %q", body)
-	}
-}
-
-func TestExtractFrontmatter_NoFrontmatter(t *testing.T) {
-	t.Parallel()
-	content := "# Just content\n\nNo frontmatter here."
-	fm, body, err := parser.ExtractFrontmatter(content)
-	if err != nil {
-		t.Fatalf("ExtractFrontmatter() error = %v", err)
-	}
-	if fm.Title != "" {
-		t.Errorf("Title = %q, want empty", fm.Title)
-	}
-	if !strings.Contains(body, "# Just content") {
-		t.Errorf("body = %q, want original content", body)
 	}
 }
 

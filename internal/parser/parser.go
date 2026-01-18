@@ -15,19 +15,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Frontmatter holds metadata extracted from markdown files.
-type Frontmatter struct {
+// frontmatter holds metadata extracted from markdown files.
+type frontmatter struct {
 	Title    string `yaml:"title"`
 	Template string `yaml:"template"`
 	Summary  string `yaml:"summary"`
 	Date     string `yaml:"date"`
-}
-
-// MarkdownToHTML converts markdown content to HTML.
-// Deprecated: Use MarkdownToHTMLWithError for proper error handling.
-func MarkdownToHTML(md string) string {
-	html, _ := MarkdownToHTMLWithError(md)
-	return html
 }
 
 // MarkdownToHTMLWithError converts markdown content to HTML and returns any conversion error.
@@ -39,9 +32,9 @@ func MarkdownToHTMLWithError(md string) (string, error) {
 	return buf.String(), nil
 }
 
-// ExtractFrontmatter separates YAML frontmatter from markdown content.
-func ExtractFrontmatter(content string) (Frontmatter, string, error) {
-	var fm Frontmatter
+// extractFrontmatter separates YAML frontmatter from markdown content.
+func extractFrontmatter(content string) (frontmatter, string, error) {
+	var fm frontmatter
 	if !strings.HasPrefix(content, "---") {
 		return fm, content, nil
 	}
@@ -65,7 +58,7 @@ func ParsePage(path string) (*model.Page, error) {
 		return nil, err
 	}
 
-	fm, body, err := ExtractFrontmatter(string(data))
+	fm, body, err := extractFrontmatter(string(data))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +100,7 @@ func ParsePost(path string) (*model.Post, error) {
 		return nil, err
 	}
 
-	fm, body, err := ExtractFrontmatter(string(data))
+	fm, body, err := extractFrontmatter(string(data))
 	if err != nil {
 		return nil, err
 	}
