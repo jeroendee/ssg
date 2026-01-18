@@ -69,10 +69,13 @@ project/
 ├── ssg.yaml
 ├── assets/           # Optional: add style.css here to customize
 └── content/
+    ├── home.md       # Required: homepage content
     ├── about.md
     └── blog/
         └── 2024-01-15-my-first-post.md
 ```
+
+**Note:** `home.md` is required and provides the content for your homepage.
 
 3. Build the site:
 
@@ -176,6 +179,15 @@ title: About
 Your page content here in **markdown**.
 ```
 
+You can also specify a custom template:
+
+```markdown
+---
+title: About
+template: custom
+---
+```
+
 Pages become clean URLs: `content/about.md` → `/about/`
 
 ### Blog Posts
@@ -216,6 +228,7 @@ If you don't provide a custom stylesheet, the default is used automatically.
 | `build.content` | No | `content` | Directory containing markdown files |
 | `build.output` | No | `public` | Directory for generated HTML |
 | `navigation` | No | - | List of navigation menu items |
+| `analytics.goatcounter` | No | - | GoatCounter analytics code (e.g., `mysite` for mysite.goatcounter.com) |
 
 ## RSS Feed
 
