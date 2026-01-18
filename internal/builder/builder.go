@@ -82,10 +82,6 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 		if isIndexFile(entry.Name()) {
 			continue
 		}
-		// Skip home.md - it's handled separately as the homepage
-		if entry.Name() == "home.md" {
-			continue
-		}
 
 		path := filepath.Join(b.cfg.ContentDir, entry.Name())
 		page, err := parser.ParsePage(path)
@@ -184,11 +180,6 @@ func (b *Builder) Build() error {
 
 	// Generate RSS feed
 	if err := b.writeFeed(r, *site); err != nil {
-		return err
-	}
-
-	// Generate homepage
-	if err := b.writeHomepage(r, *site); err != nil {
 		return err
 	}
 
@@ -313,6 +304,11 @@ func (b *Builder) writePage(r *renderer.Renderer, site model.Site, page model.Pa
 		return err
 	}
 
+	// Homepage (empty slug) goes directly to /index.html
+	if page.Slug == "" {
+		return os.WriteFile(filepath.Join(b.cfg.OutputDir, "index.html"), []byte(html), 0644)
+	}
+
 	// Create clean URL directory: /slug/index.html
 	dir := filepath.Join(b.cfg.OutputDir, page.Slug)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -371,16 +367,6 @@ func (b *Builder) writeFeed(r *renderer.Renderer, site model.Site) error {
 	}
 
 	return os.WriteFile(filepath.Join(dir, "index.xml"), []byte(xml), 0644)
-}
-
-// writeHomepage writes the homepage.
-func (b *Builder) writeHomepage(r *renderer.Renderer, site model.Site) error {
-	html, err := r.RenderHome(site)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(filepath.Join(b.cfg.OutputDir, "index.html"), []byte(html), 0644)
 }
 
 // write404 writes the 404 error page.

@@ -35,7 +35,7 @@ func TestScanContent(t *testing.T) {
 				writeFile(t, filepath.Join(dir, "blog", "2021-04-15-second-post.md"), "---\ntitle: Second Post\n---\nSecond content")
 				return dir
 			},
-			wantPages: 2,
+			wantPages: 3, // about + contact + home (home.md now parsed as page with empty slug)
 			wantPosts: 2,
 			wantErr:   false,
 		},
@@ -46,7 +46,7 @@ func TestScanContent(t *testing.T) {
 				writeFile(t, filepath.Join(dir, "home.md"), "---\ntitle: Home\n---\nWelcome")
 				return dir
 			},
-			wantPages: 0,
+			wantPages: 1, // home.md parsed as page with empty slug
 			wantPosts: 0,
 			wantErr:   false,
 		},
@@ -58,7 +58,7 @@ func TestScanContent(t *testing.T) {
 				writeFile(t, filepath.Join(dir, "about.md"), "---\ntitle: About\n---\nAbout content")
 				return dir
 			},
-			wantPages: 1,
+			wantPages: 2, // about + home
 			wantPosts: 0,
 			wantErr:   false,
 		},
@@ -71,7 +71,7 @@ func TestScanContent(t *testing.T) {
 				writeFile(t, filepath.Join(dir, "blog", "2021-03-26-post.md"), "---\ntitle: Post\n---\nContent")
 				return dir
 			},
-			wantPages: 0,
+			wantPages: 1, // home.md parsed as page with empty slug
 			wantPosts: 1,
 			wantErr:   false,
 		},
@@ -221,8 +221,9 @@ func TestScanContent_IgnoresNonMarkdownFiles(t *testing.T) {
 		t.Fatalf("ScanContent() error = %v", err)
 	}
 
-	if len(site.Pages) != 1 {
-		t.Errorf("ScanContent() pages = %d, want 1 (should ignore non-md files)", len(site.Pages))
+	// Expect 2: about.md + home.md (home.md is now parsed as a page with empty slug)
+	if len(site.Pages) != 2 {
+		t.Errorf("ScanContent() pages = %d, want 2 (should ignore non-md files)", len(site.Pages))
 	}
 }
 
@@ -249,9 +250,9 @@ func TestScanContent_IgnoresIndexFiles(t *testing.T) {
 		t.Fatalf("ScanContent() error = %v", err)
 	}
 
-	// Should have 1 page (about.md) and 1 post, ignoring _index.md files
-	if len(site.Pages) != 1 {
-		t.Errorf("ScanContent() pages = %d, want 1", len(site.Pages))
+	// Should have 2 pages (about.md + home.md) and 1 post, ignoring _index.md files
+	if len(site.Pages) != 2 {
+		t.Errorf("ScanContent() pages = %d, want 2", len(site.Pages))
 	}
 	if len(site.Posts) != 1 {
 		t.Errorf("ScanContent() posts = %d, want 1", len(site.Posts))
@@ -1162,6 +1163,52 @@ func TestBuild_HomeMdMissing(t *testing.T) {
 	wantMsg := "home.md not found in content directory"
 	if !strings.Contains(err.Error(), wantMsg) {
 		t.Errorf("Build() error = %q, want to contain %q", err.Error(), wantMsg)
+	}
+}
+
+func TestBuild_HomepageOutput_WritesToRootIndex(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// Create home.md with distinctive content
+	writeFile(t, filepath.Join(contentDir, "home.md"),
+		"---\ntitle: Welcome Home\n---\nThis is my unique homepage content from home.md")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	// Verify homepage is written to /index.html
+	indexPath := filepath.Join(outputDir, "index.html")
+	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
+		t.Fatal("Build() did not create /index.html")
+	}
+
+	content, err := os.ReadFile(indexPath)
+	if err != nil {
+		t.Fatalf("failed to read index.html: %v", err)
+	}
+
+	// Verify content comes from home.md, not hardcoded
+	if !strings.Contains(string(content), "unique homepage content from home.md") {
+		t.Error("Build() index.html does not contain content from home.md")
+	}
+
+	// Verify /home/index.html is NOT created
+	homeDirPath := filepath.Join(outputDir, "home", "index.html")
+	if _, err := os.Stat(homeDirPath); !os.IsNotExist(err) {
+		t.Error("Build() should NOT create /home/index.html - homepage should go to /index.html")
 	}
 }
 
