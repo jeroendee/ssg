@@ -42,6 +42,7 @@ type Site struct {
 	Author      string
 	Logo        string
 	Favicon     string
+	HomeContent string
 	Navigation  []NavItem
 	Pages       []Page
 	Posts       []Post

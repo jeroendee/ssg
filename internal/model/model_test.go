@@ -75,9 +75,10 @@ func TestPost(t *testing.T) {
 func TestSite(t *testing.T) {
 	t.Parallel()
 	site := model.Site{
-		Title:   "Quality Shepherd",
-		BaseURL: "https://www.qualityshepherd.nl",
-		Author:  "Jeroen",
+		Title:       "Quality Shepherd",
+		BaseURL:     "https://www.qualityshepherd.nl",
+		Author:      "Jeroen",
+		HomeContent: "<p>Welcome to Quality Shepherd</p>",
 		Navigation: []model.NavItem{
 			{Title: "Home", URL: "/"},
 			{Title: "About", URL: "/about/"},
@@ -97,6 +98,9 @@ func TestSite(t *testing.T) {
 	}
 	if site.Author != "Jeroen" {
 		t.Errorf("Site.Author = %q, want %q", site.Author, "Jeroen")
+	}
+	if site.HomeContent != "<p>Welcome to Quality Shepherd</p>" {
+		t.Errorf("Site.HomeContent = %q, want %q", site.HomeContent, "<p>Welcome to Quality Shepherd</p>")
 	}
 	if len(site.Navigation) != 2 {
 		t.Errorf("len(Site.Navigation) = %d, want %d", len(site.Navigation), 2)

@@ -44,6 +44,7 @@ type templateData struct {
 	Version      string
 	PageType     string
 	Content      template.HTML
+	HomeContent  template.HTML
 	Page         struct {
 		Title   string
 		Content template.HTML
@@ -202,6 +203,7 @@ func (r *Renderer) RenderHome(site model.Site) (string, error) {
 		OGImage:      ogImageURL(site),
 		Version:      r.version,
 		PageType:     "home",
+		HomeContent:  template.HTML(site.HomeContent),
 	}
 
 	var buf bytes.Buffer

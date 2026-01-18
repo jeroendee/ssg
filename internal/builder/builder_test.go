@@ -1104,6 +1104,96 @@ func TestValidateOutputDir(t *testing.T) {
 	}
 }
 
+func TestScanContent_HomeMdStoredInHomeContent(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "home.md"), "---\ntitle: Home\n---\nWelcome to my site")
+	writeFile(t, filepath.Join(dir, "about.md"), "---\ntitle: About\n---\nAbout content")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: dir,
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	// HomeContent should contain parsed HTML from home.md
+	if site.HomeContent == "" {
+		t.Error("ScanContent() HomeContent is empty, expected content from home.md")
+	}
+	if !strings.Contains(site.HomeContent, "Welcome to my site") {
+		t.Errorf("ScanContent() HomeContent = %q, expected to contain 'Welcome to my site'", site.HomeContent)
+	}
+}
+
+func TestScanContent_HomeMdExcludedFromPages(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "home.md"), "---\ntitle: Home\n---\nWelcome to my site")
+	writeFile(t, filepath.Join(dir, "about.md"), "---\ntitle: About\n---\nAbout content")
+	writeFile(t, filepath.Join(dir, "contact.md"), "---\ntitle: Contact\n---\nContact content")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: dir,
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	// Should have 2 pages (about, contact) - home.md excluded
+	if len(site.Pages) != 2 {
+		t.Errorf("ScanContent() pages = %d, want 2 (home.md should be excluded)", len(site.Pages))
+	}
+
+	// Verify home is not in Pages
+	for _, page := range site.Pages {
+		if page.Slug == "home" {
+			t.Error("ScanContent() home.md should not be in Pages slice")
+		}
+	}
+}
+
+func TestScanContent_MissingHomeMdGraceful(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "about.md"), "---\ntitle: About\n---\nAbout content")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: dir,
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	// HomeContent should be empty when home.md doesn't exist
+	if site.HomeContent != "" {
+		t.Errorf("ScanContent() HomeContent = %q, want empty when home.md doesn't exist", site.HomeContent)
+	}
+
+	// Should have 1 page (about)
+	if len(site.Pages) != 1 {
+		t.Errorf("ScanContent() pages = %d, want 1", len(site.Pages))
+	}
+}
+
 func TestCleanOutputDir_RejectsUnsafePaths(t *testing.T) {
 	t.Parallel()
 
