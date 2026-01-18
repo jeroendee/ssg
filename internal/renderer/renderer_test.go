@@ -381,70 +381,6 @@ func TestRenderBase(t *testing.T) {
 	}
 }
 
-func TestRenderHome(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name      string
-		site      model.Site
-		wantTitle string
-		wantNav   bool
-	}{
-		{
-			name: "renders homepage with site title",
-			site: model.Site{
-				Title:   "Quality Shepherd",
-				BaseURL: "https://www.qualityshepherd.nl",
-				Navigation: []model.NavItem{
-					{Title: "Home", URL: "/"},
-					{Title: "Blog", URL: "/blog/"},
-				},
-			},
-			wantTitle: "Quality Shepherd",
-			wantNav:   true,
-		},
-		{
-			name: "renders homepage with minimal site",
-			site: model.Site{
-				Title: "Test Site",
-			},
-			wantTitle: "Test Site",
-			wantNav:   false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			r, err := New()
-			if err != nil {
-				t.Fatalf("New() error = %v", err)
-			}
-
-			got, err := r.RenderHome(tt.site)
-			if err != nil {
-				t.Fatalf("RenderHome() error = %v", err)
-			}
-
-			// Check site title in output
-			if !strings.Contains(got, tt.wantTitle) {
-				t.Errorf("RenderHome() missing title %q", tt.wantTitle)
-			}
-
-			// Check valid HTML structure
-			if !strings.Contains(got, "<!DOCTYPE html>") {
-				t.Error("RenderHome() missing DOCTYPE")
-			}
-
-			// Check navigation is present when expected
-			if tt.wantNav && !strings.Contains(got, "<nav") {
-				t.Error("RenderHome() missing nav element")
-			}
-		})
-	}
-}
-
 func TestRender404(t *testing.T) {
 	t.Parallel()
 
@@ -895,31 +831,6 @@ func TestRenderFeed_Max20Posts(t *testing.T) {
 	}
 }
 
-func TestRenderHome_CanonicalURL(t *testing.T) {
-	t.Parallel()
-
-	r, err := New()
-	if err != nil {
-		t.Fatalf("New() error = %v", err)
-	}
-
-	site := model.Site{
-		Title:   "Test Site",
-		BaseURL: "https://example.com",
-	}
-
-	got, err := r.RenderHome(site)
-	if err != nil {
-		t.Fatalf("RenderHome() error = %v", err)
-	}
-
-	// Check canonical URL is available (homepage = BaseURL + "/")
-	wantCanonical := "https://example.com/"
-	if !strings.Contains(got, wantCanonical) {
-		t.Errorf("RenderHome() should expose canonical URL %q", wantCanonical)
-	}
-}
-
 func TestRenderPage_CanonicalURL(t *testing.T) {
 	t.Parallel()
 
@@ -1132,32 +1043,6 @@ func TestRenderPage_MetaDescription(t *testing.T) {
 	}
 }
 
-func TestRenderHome_MetaDescription(t *testing.T) {
-	t.Parallel()
-
-	r, err := New()
-	if err != nil {
-		t.Fatalf("New() error = %v", err)
-	}
-
-	site := model.Site{
-		Title:       "Test Site",
-		Description: "Homepage site description",
-		BaseURL:     "https://example.com",
-	}
-
-	got, err := r.RenderHome(site)
-	if err != nil {
-		t.Fatalf("RenderHome() error = %v", err)
-	}
-
-	// Home should use site description
-	wantMeta := `<meta name="description" content="Homepage site description">`
-	if !strings.Contains(got, wantMeta) {
-		t.Errorf("RenderHome() should have meta description with site description, got:\n%s", got)
-	}
-}
-
 func TestRenderBlogPost_OpenGraphTags(t *testing.T) {
 	t.Parallel()
 
@@ -1259,37 +1144,6 @@ func TestRenderPage_OpenGraphTags(t *testing.T) {
 	}
 }
 
-func TestRenderHome_OpenGraphTags(t *testing.T) {
-	t.Parallel()
-
-	r, err := New()
-	if err != nil {
-		t.Fatalf("New() error = %v", err)
-	}
-
-	site := model.Site{
-		Title:       "Quality Shepherd",
-		Description: "A blog about testing",
-		BaseURL:     "https://www.qualityshepherd.nl",
-		Logo:        "/logo.svg",
-	}
-
-	got, err := r.RenderHome(site)
-	if err != nil {
-		t.Fatalf("RenderHome() error = %v", err)
-	}
-
-	// Check og:title (falls back to Site.Title when no PageTitle)
-	if !strings.Contains(got, `<meta property="og:title" content="Quality Shepherd">`) {
-		t.Error("RenderHome() missing og:title")
-	}
-
-	// Check og:type (website for homepage)
-	if !strings.Contains(got, `<meta property="og:type" content="website">`) {
-		t.Error("RenderHome() should have og:type=website")
-	}
-}
-
 func TestRenderBlogPost_TwitterCardTags(t *testing.T) {
 	t.Parallel()
 
@@ -1373,56 +1227,6 @@ func TestRenderPage_TwitterCardTags(t *testing.T) {
 	// Check twitter:title
 	if !strings.Contains(got, `<meta name="twitter:title" content="About">`) {
 		t.Error("RenderPage() missing twitter:title")
-	}
-}
-
-func TestRenderHome_JSONLDWebSiteSchema(t *testing.T) {
-	t.Parallel()
-
-	r, err := New()
-	if err != nil {
-		t.Fatalf("New() error = %v", err)
-	}
-
-	site := model.Site{
-		Title:       "Quality Shepherd",
-		Description: "A blog about testing",
-		BaseURL:     "https://www.qualityshepherd.nl",
-	}
-
-	got, err := r.RenderHome(site)
-	if err != nil {
-		t.Fatalf("RenderHome() error = %v", err)
-	}
-
-	// Check JSON-LD script tag exists
-	if !strings.Contains(got, `<script type="application/ld+json">`) {
-		t.Error("RenderHome() missing JSON-LD script tag")
-	}
-
-	// Check WebSite schema type
-	if !strings.Contains(got, `"@type": "WebSite"`) {
-		t.Error("RenderHome() missing WebSite @type in JSON-LD")
-	}
-
-	// Check name
-	if !strings.Contains(got, `"name": "Quality Shepherd"`) {
-		t.Error("RenderHome() missing name in WebSite JSON-LD")
-	}
-
-	// Check url (html/template escapes / to \/ in script tags)
-	if !strings.Contains(got, `"url": "https:\/\/www.qualityshepherd.nl"`) {
-		t.Errorf("RenderHome() missing url in WebSite JSON-LD, got:\n%s", got)
-	}
-
-	// Check description
-	if !strings.Contains(got, `"description": "A blog about testing"`) {
-		t.Error("RenderHome() missing description in WebSite JSON-LD")
-	}
-
-	// Homepage should NOT have Article schema
-	if strings.Contains(got, `"@type": "Article"`) {
-		t.Error("RenderHome() should NOT have Article schema")
 	}
 }
 
@@ -1537,22 +1341,13 @@ func TestRenderer_SetVersion(t *testing.T) {
 		BaseURL: "https://example.com",
 	}
 
-	// Test version appears in RenderHome
-	got, err := r.RenderHome(site)
-	if err != nil {
-		t.Fatalf("RenderHome() error = %v", err)
-	}
-	if !strings.Contains(got, "v1.2.3") {
-		t.Error("RenderHome() should include version in output")
-	}
-
 	// Test version appears in RenderPage
 	page := model.Page{
 		Title:   "About",
 		Slug:    "about",
 		Content: "<p>About content</p>",
 	}
-	got, err = r.RenderPage(site, page)
+	got, err := r.RenderPage(site, page)
 	if err != nil {
 		t.Fatalf("RenderPage() error = %v", err)
 	}
