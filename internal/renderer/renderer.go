@@ -192,25 +192,6 @@ func (r *Renderer) RenderBlogPost(site model.Site, post model.Post) (string, err
 	return buf.String(), nil
 }
 
-// RenderHome renders the homepage.
-func (r *Renderer) RenderHome(site model.Site) (string, error) {
-	data := templateData{
-		Site:         site,
-		CanonicalURL: site.BaseURL + "/",
-		Summary:      site.Description,
-		IsPost:       false,
-		OGImage:      ogImageURL(site),
-		Version:      r.version,
-		PageType:     "home",
-	}
-
-	var buf bytes.Buffer
-	if err := r.templates.ExecuteTemplate(&buf, "base.html", data); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
 // notFoundData holds data for 404 page template rendering.
 type notFoundData struct {
 	Site         model.Site

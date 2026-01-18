@@ -23,6 +23,12 @@ func TestIntegration_FullBuild(t *testing.T) {
 	os.MkdirAll(filepath.Join(contentDir, "blog"), 0755)
 	os.MkdirAll(assetsDir, 0755)
 
+	// Create required home.md
+	writeTestFile(t, filepath.Join(contentDir, "home.md"), `---
+title: Home
+---
+Welcome to Quality Shepherd`)
+
 	// Create sample pages matching qualityshepherd.nl structure
 	writeTestFile(t, filepath.Join(contentDir, "about.md"), `---
 title: About
@@ -95,6 +101,12 @@ func TestIntegration_HTMLOutputCorrectness(t *testing.T) {
 	os.MkdirAll(contentDir, 0755)
 	os.MkdirAll(filepath.Join(contentDir, "blog"), 0755)
 
+	// Create required home.md
+	writeTestFile(t, filepath.Join(contentDir, "home.md"), `---
+title: Home
+---
+Welcome`)
+
 	writeTestFile(t, filepath.Join(contentDir, "about.md"), `---
 title: About Me
 ---
@@ -163,6 +175,12 @@ func TestIntegration_CSSInclusion(t *testing.T) {
 	os.MkdirAll(contentDir, 0755)
 	os.MkdirAll(assetsDir, 0755)
 
+	// Create required home.md
+	writeTestFile(t, filepath.Join(contentDir, "home.md"), `---
+title: Home
+---
+Welcome`)
+
 	// CSS with dark mode
 	cssContent := `body { color: black; }
 @media (prefers-color-scheme: dark) {
@@ -206,6 +224,12 @@ func TestIntegration_NavigationLinks(t *testing.T) {
 
 	os.MkdirAll(contentDir, 0755)
 
+	// Create required home.md
+	writeTestFile(t, filepath.Join(contentDir, "home.md"), `---
+title: Home
+---
+Welcome`)
+
 	cfg := &model.Config{
 		Title:   "Test Site",
 		BaseURL: "https://example.com",
@@ -247,6 +271,12 @@ func TestIntegration_PostsSortedByDate(t *testing.T) {
 
 	os.MkdirAll(contentDir, 0755)
 	os.MkdirAll(filepath.Join(contentDir, "blog"), 0755)
+
+	// Create required home.md
+	writeTestFile(t, filepath.Join(contentDir, "home.md"), `---
+title: Home
+---
+Welcome`)
 
 	// Create posts in non-chronological order
 	writeTestFile(t, filepath.Join(contentDir, "blog", "2021-01-01-oldest.md"), `---

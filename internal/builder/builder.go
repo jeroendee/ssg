@@ -60,6 +60,12 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 		return nil, err
 	}
 
+	// Verify home.md exists - homepage is required
+	homePath := filepath.Join(b.cfg.ContentDir, "home.md")
+	if _, err := os.Stat(homePath); os.IsNotExist(err) {
+		return nil, errors.New("home.md not found in content directory - homepage is required")
+	}
+
 	// Scan for pages (markdown files in root content directory)
 	rootEntries, err := os.ReadDir(b.cfg.ContentDir)
 	if err != nil {
@@ -174,11 +180,6 @@ func (b *Builder) Build() error {
 
 	// Generate RSS feed
 	if err := b.writeFeed(r, *site); err != nil {
-		return err
-	}
-
-	// Generate homepage
-	if err := b.writeHomepage(r, *site); err != nil {
 		return err
 	}
 
@@ -303,6 +304,11 @@ func (b *Builder) writePage(r *renderer.Renderer, site model.Site, page model.Pa
 		return err
 	}
 
+	// Homepage (empty slug) goes directly to /index.html
+	if page.Slug == "" {
+		return os.WriteFile(filepath.Join(b.cfg.OutputDir, "index.html"), []byte(html), 0644)
+	}
+
 	// Create clean URL directory: /slug/index.html
 	dir := filepath.Join(b.cfg.OutputDir, page.Slug)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -361,16 +367,6 @@ func (b *Builder) writeFeed(r *renderer.Renderer, site model.Site) error {
 	}
 
 	return os.WriteFile(filepath.Join(dir, "index.xml"), []byte(xml), 0644)
-}
-
-// writeHomepage writes the homepage.
-func (b *Builder) writeHomepage(r *renderer.Renderer, site model.Site) error {
-	html, err := r.RenderHome(site)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(filepath.Join(b.cfg.OutputDir, "index.html"), []byte(html), 0644)
 }
 
 // write404 writes the 404 error page.
@@ -462,8 +458,15 @@ func (b *Builder) generateSitemap(site model.Site) error {
 
 	// Add pages (without lastmod)
 	for _, page := range site.Pages {
+		var loc string
+		if page.Slug == "" {
+			// Homepage: use baseURL/ without double slashes
+			loc = site.BaseURL + "/"
+		} else {
+			loc = site.BaseURL + "/" + page.Slug + "/"
+		}
 		urls = append(urls, sitemapURL{
-			Loc: site.BaseURL + "/" + page.Slug + "/",
+			Loc: loc,
 		})
 	}
 
