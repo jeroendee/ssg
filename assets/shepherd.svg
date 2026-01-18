@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="79.375mm"
+   height="79.376083mm"
+   viewBox="0 0 79.375 79.376083"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   sodipodi:docname="shepherd.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:vectornator="http://vectornator.io">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.8437617"
+     inkscape:cx="203.65973"
+     inkscape:cy="159.7278"
+     inkscape:window-width="1728"
+     inkscape:window-height="1056"
+     inkscape:window-x="0"
+     inkscape:window-y="33"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-35.71875,-106.62709)">
+    <g
+       id="Spheres"
+       vectornator:layerName="Spheres"
+       style="clip-rule:evenodd;fill-rule:evenodd;stroke-linecap:round;stroke-linejoin:round"
+       transform="matrix(0.26458333,0,0,0.26458333,35.71875,106.47418)">
+<path
+   d="M 0,150.58 C 0,67.7362 67.1573,0.577911 150,0.577911 232.843,0.577911 300,67.7362 300,150.58 300,233.424 232.843,300.582 150,300.582 67.1573,300.582 0,233.424 0,150.58 Z"
+   opacity="1"
+   fill="#1697e4"
+   id="path1" />
+
+<path
+   d="m 125.327,149.7 c 0,-13.807 11.193,-25 25,-25 13.807,0 25,11.193 25,25 0,13.807 -11.193,25 -25,25 -13.807,0 -25,-11.193 -25,-25 z"
+   opacity="1"
+   fill="#ffffff"
+   id="path2" />
+
+<path
+   d="m 224.614,149.811 c 0,-13.807 11.193,-25 25,-25 13.807,0 25,11.193 25,25 0,13.807 -11.193,25 -25,25 -13.807,0 -25,-11.193 -25,-25 z"
+   opacity="1"
+   fill="#ffffff"
+   id="path3" />
+
+<path
+   d="m 25.754,150.055 c 0,-13.807 11.1928,-25 25,-25 13.8071,0 25,11.193 25,25 0,13.808 -11.1929,25 -25,25 -13.8072,0 -25,-11.192 -25,-25 z"
+   opacity="1"
+   fill="#ffffff"
+   id="path4" />
+
+<path
+   d="m 125.158,250.458 c 0,-13.807 11.193,-25 25,-25 13.807,0 25,11.193 25,25 0,13.807 -11.193,25 -25,25 -13.807,0 -25,-11.193 -25,-25 z"
+   opacity="1"
+   fill="#ffffff"
+   id="path5" />
+
+<path
+   d="m 125.165,50.8075 c 0,-13.8071 11.193,-25 25,-25 13.807,0 25,11.1929 25,25 0,13.8071 -11.193,25 -25,25 -13.807,0 -25,-11.1929 -25,-25 z"
+   opacity="1"
+   fill="#ffffff"
+   id="path6" />
+
+</g>
+    <g
+       id="Connections"
+       vectornator:layerName="Connections"
+       style="clip-rule:evenodd;fill-rule:evenodd;stroke-linecap:round;stroke-linejoin:round"
+       transform="matrix(0.26458333,0,0,0.26458333,35.71875,106.47418)">
+<path
+   d="m 154,173.57 -0.065,52.49 -7.935,-0.01 0.065,-52.49 z"
+   opacity="1"
+   fill="#ffffff"
+   id="path7" />
+
+<path
+   d="M 153.967,73.84 154,125.835 146.033,125.84 146,73.8451 Z"
+   opacity="1"
+   fill="#ffffff"
+   id="path8" />
+
+<path
+   d="m 74.56,146.3 h 52 v 8 h -52 z"
+   opacity="1"
+   fill="#ffffff"
+   id="path9" />
+
+<path
+   d="m 174,145.99 h 52 v 8 h -52 z"
+   opacity="1"
+   fill="#ffffff"
+   id="path10" />
+
+</g>
+  </g>
+</svg>
