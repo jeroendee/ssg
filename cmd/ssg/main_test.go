@@ -504,16 +504,9 @@ func TestServeCommand_WithBuildFlag_CopiesAssets(t *testing.T) {
 build:
   content: ` + contentDir + `
   output: ` + outputDir + `
+  assets: ` + assetsDir + `
 `
 	os.WriteFile(configPath, []byte(configContent), 0644)
-
-	// Change to tmpDir so relative "assets" path works
-	origDir, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("os.Getwd() error = %v", err)
-	}
-	os.Chdir(tmpDir)
-	defer os.Chdir(origDir)
 
 	addr, cleanup := startTestServer(t, configPath, true)
 	defer cleanup()
