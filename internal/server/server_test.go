@@ -305,9 +305,9 @@ func TestHandler_SetsContentType_ForXML(t *testing.T) {
 	}
 
 	contentType := rec.Header().Get("Content-Type")
-	// http.FileServer sets application/xml for .xml files
-	if contentType != "application/xml" {
-		t.Errorf("Content-Type = %q, want %q", contentType, "application/xml")
+	// http.FileServer uses system MIME database; .xml may be application/xml or text/xml
+	if contentType != "application/xml" && contentType != "text/xml; charset=utf-8" {
+		t.Errorf("Content-Type = %q, want application/xml or text/xml", contentType)
 	}
 }
 
