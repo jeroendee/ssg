@@ -31,6 +31,7 @@ type Post struct {
 	Date      time.Time
 	Summary   string
 	WordCount int
+	Assets    []string // Referenced asset paths from markdown
 }
 
 // Site represents the complete site with all pages and posts.
