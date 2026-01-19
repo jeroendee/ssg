@@ -1550,3 +1550,73 @@ func TestRewriteAssetPaths_ExternalUrls(t *testing.T) {
 		t.Errorf("rewriteAssetPaths() should not modify external URLs, got %q, want %q", got, want)
 	}
 }
+
+func TestBlogAssetIntegration(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// Setup: Create home.md (required by builder)
+	writeFile(t, filepath.Join(contentDir, "home.md"), "---\ntitle: Home\n---\nWelcome")
+
+	// Setup: Create blog/assets directory with test image
+	assetsDir := filepath.Join(contentDir, "blog", "assets")
+	if err := os.MkdirAll(assetsDir, 0755); err != nil {
+		t.Fatalf("failed to create assets dir: %v", err)
+	}
+	writeFile(t, filepath.Join(assetsDir, "test-image.png"), "fake png content")
+
+	// Setup: Create blog post that references the asset
+	blogDir := filepath.Join(contentDir, "blog")
+	postContent := `---
+title: Test Post
+---
+Here is an image:
+
+![](assets/test-image.png)
+`
+	writeFile(t, filepath.Join(blogDir, "2024-01-01-test.md"), postContent)
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	// Execute: Run full build
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	// Assert 1: HTML output exists at expected path
+	htmlPath := filepath.Join(outputDir, "blog", "test", "index.html")
+	if _, err := os.Stat(htmlPath); os.IsNotExist(err) {
+		t.Errorf("Build() did not create HTML at %s", htmlPath)
+	}
+
+	// Assert 2: Asset was copied to post directory
+	assetPath := filepath.Join(outputDir, "blog", "test", "test-image.png")
+	if _, err := os.Stat(assetPath); os.IsNotExist(err) {
+		t.Errorf("Build() did not copy asset to %s", assetPath)
+	}
+
+	// Assert 3: HTML contains rewritten path (not assets/ prefix)
+	htmlContent, err := os.ReadFile(htmlPath)
+	if err != nil {
+		t.Fatalf("failed to read HTML: %v", err)
+	}
+
+	// Should contain: src="test-image.png"
+	if !strings.Contains(string(htmlContent), `src="test-image.png"`) {
+		t.Errorf("HTML should contain src=\"test-image.png\", got:\n%s", htmlContent)
+	}
+
+	// Should NOT contain: src="assets/test-image.png"
+	if strings.Contains(string(htmlContent), `src="assets/test-image.png"`) {
+		t.Errorf("HTML should NOT contain assets/ prefix, got:\n%s", htmlContent)
+	}
+}
