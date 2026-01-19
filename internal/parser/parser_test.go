@@ -222,3 +222,100 @@ This is the homepage content.`
 		t.Errorf("Path = %q, want %q for home.md", page.Path, "/")
 	}
 }
+
+func TestExtractAssetReferences(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		markdown string
+		want     []string
+	}{
+		{
+			name:     "single asset reference",
+			markdown: "Here is an image: ![diagram](assets/diagram.png)",
+			want:     []string{"assets/diagram.png"},
+		},
+		{
+			name:     "multiple asset references",
+			markdown: "![first](assets/one.png)\n\nSome text\n\n![second](assets/two.jpg)",
+			want:     []string{"assets/one.png", "assets/two.jpg"},
+		},
+		{
+			name:     "no asset references",
+			markdown: "Just plain text without any images.",
+			want:     []string{},
+		},
+		{
+			name:     "external URLs not matched",
+			markdown: "![external](https://example.com/image.png)",
+			want:     []string{},
+		},
+		{
+			name:     "mixed internal and external",
+			markdown: "![local](assets/local.png)\n![external](https://example.com/img.png)\n![another](assets/another.gif)",
+			want:     []string{"assets/local.png", "assets/another.gif"},
+		},
+		{
+			name:     "empty markdown",
+			markdown: "",
+			want:     []string{},
+		},
+		{
+			name:     "asset in subdirectory",
+			markdown: "![nested](assets/images/photo.jpg)",
+			want:     []string{"assets/images/photo.jpg"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := parser.ExtractAssetReferences(tt.markdown)
+			if len(got) != len(tt.want) {
+				t.Errorf("ExtractAssetReferences() = %v, want %v", got, tt.want)
+				return
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("ExtractAssetReferences()[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestParsePost_PopulatesAssets(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	file := filepath.Join(dir, "2024-01-15-with-assets.md")
+	content := `---
+title: "Post with Assets"
+---
+# My Post
+
+Here's a diagram:
+
+![diagram](assets/diagram.png)
+
+And another image:
+
+![photo](assets/photos/vacation.jpg)`
+	if err := os.WriteFile(file, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	post, err := parser.ParsePost(file)
+	if err != nil {
+		t.Fatalf("ParsePost() error = %v", err)
+	}
+	wantAssets := []string{"assets/diagram.png", "assets/photos/vacation.jpg"}
+	if len(post.Assets) != len(wantAssets) {
+		t.Errorf("Assets = %v, want %v", post.Assets, wantAssets)
+		return
+	}
+	for i := range post.Assets {
+		if post.Assets[i] != wantAssets[i] {
+			t.Errorf("Assets[%d] = %q, want %q", i, post.Assets[i], wantAssets[i])
+		}
+	}
+}

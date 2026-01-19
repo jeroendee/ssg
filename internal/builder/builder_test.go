@@ -1299,3 +1299,324 @@ func TestCleanOutputDir_RejectsUnsafePaths(t *testing.T) {
 		})
 	}
 }
+
+func TestCopyPostAssets_Success(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// Create asset source directory and file
+	assetsDir := filepath.Join(contentDir, "blog", "assets")
+	if err := os.MkdirAll(assetsDir, 0755); err != nil {
+		t.Fatalf("failed to create assets dir: %v", err)
+	}
+	assetContent := []byte("test image content")
+	writeFile(t, filepath.Join(assetsDir, "test.png"), string(assetContent))
+
+	// Create output directory for post
+	postOutputDir := filepath.Join(outputDir, "blog", "my-post")
+	if err := os.MkdirAll(postOutputDir, 0755); err != nil {
+		t.Fatalf("failed to create post output dir: %v", err)
+	}
+
+	cfg := &model.Config{
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	post := model.Post{
+		Page: model.Page{
+			Slug: "my-post",
+		},
+		Assets: []string{"assets/test.png"},
+	}
+
+	err := b.copyPostAssets(post, postOutputDir)
+	if err != nil {
+		t.Fatalf("copyPostAssets() error = %v", err)
+	}
+
+	// Verify asset was copied
+	copiedPath := filepath.Join(postOutputDir, "test.png")
+	copiedContent, err := os.ReadFile(copiedPath)
+	if err != nil {
+		t.Fatalf("failed to read copied asset: %v", err)
+	}
+
+	if !bytes.Equal(copiedContent, assetContent) {
+		t.Errorf("copied content = %q, want %q", copiedContent, assetContent)
+	}
+}
+
+func TestCopyPostAssets_MissingAsset_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// Create blog/assets dir but NO actual asset file
+	assetsDir := filepath.Join(contentDir, "blog", "assets")
+	if err := os.MkdirAll(assetsDir, 0755); err != nil {
+		t.Fatalf("failed to create assets dir: %v", err)
+	}
+
+	postOutputDir := filepath.Join(outputDir, "blog", "my-post")
+	if err := os.MkdirAll(postOutputDir, 0755); err != nil {
+		t.Fatalf("failed to create post output dir: %v", err)
+	}
+
+	cfg := &model.Config{
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	post := model.Post{
+		Page: model.Page{
+			Slug: "my-post",
+		},
+		Assets: []string{"assets/missing.png"},
+	}
+
+	err := b.copyPostAssets(post, postOutputDir)
+	if err == nil {
+		t.Fatal("copyPostAssets() expected error for missing asset")
+	}
+
+	// Verify error message is descriptive
+	if !strings.Contains(err.Error(), "missing.png") {
+		t.Errorf("error should mention asset name, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "my-post") {
+		t.Errorf("error should mention post slug, got: %v", err)
+	}
+}
+
+func TestCopyPostAssets_NoAssets(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	postOutputDir := filepath.Join(outputDir, "blog", "my-post")
+	if err := os.MkdirAll(postOutputDir, 0755); err != nil {
+		t.Fatalf("failed to create post output dir: %v", err)
+	}
+
+	cfg := &model.Config{
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	post := model.Post{
+		Page: model.Page{
+			Slug: "my-post",
+		},
+		Assets: []string{}, // Empty assets
+	}
+
+	err := b.copyPostAssets(post, postOutputDir)
+	if err != nil {
+		t.Errorf("copyPostAssets() with no assets should return nil, got: %v", err)
+	}
+}
+
+func TestCopyPostAssets_MultipleAssets(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// Create asset source directory and multiple files
+	assetsDir := filepath.Join(contentDir, "blog", "assets")
+	if err := os.MkdirAll(assetsDir, 0755); err != nil {
+		t.Fatalf("failed to create assets dir: %v", err)
+	}
+	writeFile(t, filepath.Join(assetsDir, "image1.png"), "image 1 content")
+	writeFile(t, filepath.Join(assetsDir, "image2.jpg"), "image 2 content")
+	writeFile(t, filepath.Join(assetsDir, "diagram.svg"), "svg content")
+
+	postOutputDir := filepath.Join(outputDir, "blog", "my-post")
+	if err := os.MkdirAll(postOutputDir, 0755); err != nil {
+		t.Fatalf("failed to create post output dir: %v", err)
+	}
+
+	cfg := &model.Config{
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	b := New(cfg)
+	post := model.Post{
+		Page: model.Page{
+			Slug: "my-post",
+		},
+		Assets: []string{
+			"assets/image1.png",
+			"assets/image2.jpg",
+			"assets/diagram.svg",
+		},
+	}
+
+	err := b.copyPostAssets(post, postOutputDir)
+	if err != nil {
+		t.Fatalf("copyPostAssets() error = %v", err)
+	}
+
+	// Verify all assets were copied
+	expectedFiles := map[string]string{
+		"image1.png":  "image 1 content",
+		"image2.jpg":  "image 2 content",
+		"diagram.svg": "svg content",
+	}
+
+	for name, expectedContent := range expectedFiles {
+		copiedPath := filepath.Join(postOutputDir, name)
+		content, err := os.ReadFile(copiedPath)
+		if err != nil {
+			t.Errorf("failed to read copied asset %s: %v", name, err)
+			continue
+		}
+		if string(content) != expectedContent {
+			t.Errorf("asset %s content = %q, want %q", name, content, expectedContent)
+		}
+	}
+}
+
+func TestRewriteAssetPaths_DoubleQuotes(t *testing.T) {
+	t.Parallel()
+
+	input := `<img src="assets/pic.jpg" alt="test">`
+	want := `<img src="pic.jpg" alt="test">`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() = %q, want %q", got, want)
+	}
+}
+
+func TestRewriteAssetPaths_SingleQuotes(t *testing.T) {
+	t.Parallel()
+
+	input := `<img src='assets/pic.jpg' alt='test'>`
+	want := `<img src='pic.jpg' alt='test'>`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() = %q, want %q", got, want)
+	}
+}
+
+func TestRewriteAssetPaths_MultipleImages(t *testing.T) {
+	t.Parallel()
+
+	input := `<p><img src="assets/one.png"><img src="assets/two.jpg"></p>`
+	want := `<p><img src="one.png"><img src="two.jpg"></p>`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() = %q, want %q", got, want)
+	}
+}
+
+func TestRewriteAssetPaths_NoAssets(t *testing.T) {
+	t.Parallel()
+
+	input := `<img src="photo.jpg" alt="test">`
+	want := `<img src="photo.jpg" alt="test">`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() = %q, want %q", got, want)
+	}
+}
+
+func TestRewriteAssetPaths_ExternalUrls(t *testing.T) {
+	t.Parallel()
+
+	input := `<img src="https://example.com/assets/image.jpg">`
+	want := `<img src="https://example.com/assets/image.jpg">`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() should not modify external URLs, got %q, want %q", got, want)
+	}
+}
+
+func TestBlogAssetIntegration(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	// Setup: Create home.md (required by builder)
+	writeFile(t, filepath.Join(contentDir, "home.md"), "---\ntitle: Home\n---\nWelcome")
+
+	// Setup: Create blog/assets directory with test image
+	assetsDir := filepath.Join(contentDir, "blog", "assets")
+	if err := os.MkdirAll(assetsDir, 0755); err != nil {
+		t.Fatalf("failed to create assets dir: %v", err)
+	}
+	writeFile(t, filepath.Join(assetsDir, "test-image.png"), "fake png content")
+
+	// Setup: Create blog post that references the asset
+	blogDir := filepath.Join(contentDir, "blog")
+	postContent := `---
+title: Test Post
+---
+Here is an image:
+
+![](assets/test-image.png)
+`
+	writeFile(t, filepath.Join(blogDir, "2024-01-01-test.md"), postContent)
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	// Execute: Run full build
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	// Assert 1: HTML output exists at expected path
+	htmlPath := filepath.Join(outputDir, "blog", "test", "index.html")
+	if _, err := os.Stat(htmlPath); os.IsNotExist(err) {
+		t.Errorf("Build() did not create HTML at %s", htmlPath)
+	}
+
+	// Assert 2: Asset was copied to post directory
+	assetPath := filepath.Join(outputDir, "blog", "test", "test-image.png")
+	if _, err := os.Stat(assetPath); os.IsNotExist(err) {
+		t.Errorf("Build() did not copy asset to %s", assetPath)
+	}
+
+	// Assert 3: HTML contains rewritten path (not assets/ prefix)
+	htmlContent, err := os.ReadFile(htmlPath)
+	if err != nil {
+		t.Fatalf("failed to read HTML: %v", err)
+	}
+
+	// Should contain: src="test-image.png"
+	if !strings.Contains(string(htmlContent), `src="test-image.png"`) {
+		t.Errorf("HTML should contain src=\"test-image.png\", got:\n%s", htmlContent)
+	}
+
+	// Should NOT contain: src="assets/test-image.png"
+	if strings.Contains(string(htmlContent), `src="assets/test-image.png"`) {
+		t.Errorf("HTML should NOT contain assets/ prefix, got:\n%s", htmlContent)
+	}
+}

@@ -86,6 +86,20 @@ func ParsePage(path string) (*model.Page, error) {
 }
 
 var dateFilenameRegex = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2})-(.+)\.md$`)
+var assetRefRegex = regexp.MustCompile(`!\[.*?\]\((assets/[^)]+)\)`)
+
+// ExtractAssetReferences finds all asset references in markdown content.
+func ExtractAssetReferences(markdown string) []string {
+	matches := assetRefRegex.FindAllStringSubmatch(markdown, -1)
+	if matches == nil {
+		return []string{}
+	}
+	assets := make([]string, len(matches))
+	for i, m := range matches {
+		assets[i] = m[1]
+	}
+	return assets
+}
 
 // ParsePost reads a markdown file and returns a Post.
 func ParsePost(path string) (*model.Post, error) {
@@ -135,5 +149,6 @@ func ParsePost(path string) (*model.Post, error) {
 		Date:      postDate,
 		Summary:   fm.Summary,
 		WordCount: wordcount.Count(body),
+		Assets:    ExtractAssetReferences(body),
 	}, nil
 }

@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/ssg/config.schema.json",
+  "title": "SSG Configuration",
+  "description": "Configuration schema for the SSG static site generator",
+  "type": "object",
+  "required": ["site"],
+  "properties": {
+    "site": {
+      "type": "object",
+      "description": "Site metadata and settings",
+      "required": ["title", "baseURL"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Site name displayed in header, titles, and metadata",
+          "minLength": 1,
+          "examples": ["My Blog", "Personal Website"]
+        },
+        "baseURL": {
+          "type": "string",
+          "description": "Root URL where the site will be hosted (no trailing slash)",
+          "format": "uri",
+          "examples": ["https://example.com", "https://blog.example.com"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Site description for RSS feeds and meta tags",
+          "examples": ["A personal blog about technology and life"]
+        },
+        "author": {
+          "type": "string",
+          "description": "Author name for JSON-LD structured data and RSS feeds",
+          "examples": ["John Doe"]
+        },
+        "logo": {
+          "type": "string",
+          "description": "Path to logo image relative to site root",
+          "examples": ["/logo.svg", "/images/logo.png"]
+        },
+        "favicon": {
+          "type": "string",
+          "description": "Path to favicon relative to site root",
+          "examples": ["/favicon.svg", "/favicon.ico"]
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "description": "Build configuration settings",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "Directory containing Markdown content files",
+          "default": "content",
+          "examples": ["content", "src/content"]
+        },
+        "output": {
+          "type": "string",
+          "description": "Directory for generated site output",
+          "default": "public",
+          "examples": ["public", "dist", "build"]
+        },
+        "assets": {
+          "type": "string",
+          "description": "Directory containing static assets",
+          "default": "assets",
+          "examples": ["assets", "static"]
+        }
+      }
+    },
+    "navigation": {
+      "type": "array",
+      "description": "Navigation menu items",
+      "items": {
+        "type": "object",
+        "required": ["title", "url"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Display text for the navigation link",
+            "minLength": 1,
+            "examples": ["Home", "About", "Blog"]
+          },
+          "url": {
+            "type": "string",
+            "description": "URL path for the navigation link",
+            "examples": ["/", "/about/", "/blog/"]
+          }
+        }
+      },
+      "examples": [
+        [
+          {"title": "Home", "url": "/"},
+          {"title": "About", "url": "/about/"},
+          {"title": "Blog", "url": "/blog/"}
+        ]
+      ]
+    },
+    "analytics": {
+      "type": "object",
+      "description": "Analytics configuration",
+      "properties": {
+        "goatcounter": {
+          "type": "string",
+          "description": "GoatCounter site code (just the code, not full URL)",
+          "examples": ["mysite", "myblog"]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "site": {
+        "title": "My Blog",
+        "baseURL": "https://example.com",
+        "description": "A personal blog",
+        "author": "John Doe",
+        "logo": "/logo.svg",
+        "favicon": "/favicon.svg"
+      },
+      "build": {
+        "content": "content",
+        "output": "public",
+        "assets": "assets"
+      },
+      "navigation": [
+        {"title": "Home", "url": "/"},
+        {"title": "About", "url": "/about/"},
+        {"title": "Blog", "url": "/blog/"}
+      ],
+      "analytics": {
+        "goatcounter": "mysite"
+      }
+    }
+  ]
+}

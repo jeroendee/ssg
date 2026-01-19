@@ -3,6 +3,7 @@ package builder
 import (
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -169,6 +170,11 @@ func (b *Builder) Build() error {
 		if err := b.writePost(r, *site, post); err != nil {
 			return err
 		}
+		// Copy referenced assets to post output directory
+		postOutputDir := filepath.Join(b.cfg.OutputDir, "blog", post.Slug)
+		if err := b.copyPostAssets(post, postOutputDir); err != nil {
+			return err
+		}
 	}
 
 	// Generate blog listing if there are posts
@@ -325,6 +331,9 @@ func (b *Builder) writePost(r *renderer.Renderer, site model.Site, post model.Po
 		return err
 	}
 
+	// Rewrite asset paths for co-located assets
+	html = rewriteAssetPaths(html)
+
 	// Create clean URL directory: /blog/slug/index.html
 	dir := filepath.Join(b.cfg.OutputDir, "blog", post.Slug)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -430,6 +439,31 @@ func copyFile(src, dst string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
+}
+
+// rewriteAssetPaths rewrites asset paths from assets/filename.jpg to filename.jpg in HTML.
+func rewriteAssetPaths(html string) string {
+	html = strings.ReplaceAll(html, `src="assets/`, `src="`)
+	html = strings.ReplaceAll(html, `src='assets/`, `src='`)
+	return html
+}
+
+// copyPostAssets copies referenced assets from content/blog/assets/ to the post's output directory.
+func (b *Builder) copyPostAssets(post model.Post, outputDir string) error {
+	for _, asset := range post.Assets {
+		filename := filepath.Base(asset)
+		src := filepath.Join(b.cfg.ContentDir, "blog", "assets", filename)
+		dst := filepath.Join(outputDir, filename)
+
+		if _, err := os.Stat(src); os.IsNotExist(err) {
+			return fmt.Errorf("asset not found: %s referenced in post %s", asset, post.Slug)
+		}
+
+		if err := copyFile(src, dst); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // generateRobotsTxt creates robots.txt with sitemap reference.
