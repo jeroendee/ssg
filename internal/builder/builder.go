@@ -3,6 +3,7 @@ package builder
 import (
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -167,6 +168,11 @@ func (b *Builder) Build() error {
 	// Render blog posts with clean URLs
 	for _, post := range site.Posts {
 		if err := b.writePost(r, *site, post); err != nil {
+			return err
+		}
+		// Copy referenced assets to post output directory
+		postOutputDir := filepath.Join(b.cfg.OutputDir, "blog", post.Slug)
+		if err := b.copyPostAssets(post, postOutputDir); err != nil {
 			return err
 		}
 	}
@@ -430,6 +436,24 @@ func copyFile(src, dst string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
+}
+
+// copyPostAssets copies referenced assets from content/blog/assets/ to the post's output directory.
+func (b *Builder) copyPostAssets(post model.Post, outputDir string) error {
+	for _, asset := range post.Assets {
+		filename := filepath.Base(asset)
+		src := filepath.Join(b.cfg.ContentDir, "blog", "assets", filename)
+		dst := filepath.Join(outputDir, filename)
+
+		if _, err := os.Stat(src); os.IsNotExist(err) {
+			return fmt.Errorf("asset not found: %s referenced in post %s", asset, post.Slug)
+		}
+
+		if err := copyFile(src, dst); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // generateRobotsTxt creates robots.txt with sitemap reference.
