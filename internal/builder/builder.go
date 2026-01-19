@@ -331,6 +331,9 @@ func (b *Builder) writePost(r *renderer.Renderer, site model.Site, post model.Po
 		return err
 	}
 
+	// Rewrite asset paths for co-located assets
+	html = rewriteAssetPaths(html)
+
 	// Create clean URL directory: /blog/slug/index.html
 	dir := filepath.Join(b.cfg.OutputDir, "blog", post.Slug)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -436,6 +439,13 @@ func copyFile(src, dst string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
+}
+
+// rewriteAssetPaths rewrites asset paths from assets/filename.jpg to filename.jpg in HTML.
+func rewriteAssetPaths(html string) string {
+	html = strings.ReplaceAll(html, `src="assets/`, `src="`)
+	html = strings.ReplaceAll(html, `src='assets/`, `src='`)
+	return html
 }
 
 // copyPostAssets copies referenced assets from content/blog/assets/ to the post's output directory.

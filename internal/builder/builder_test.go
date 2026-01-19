@@ -1485,3 +1485,68 @@ func TestCopyPostAssets_MultipleAssets(t *testing.T) {
 		}
 	}
 }
+
+func TestRewriteAssetPaths_DoubleQuotes(t *testing.T) {
+	t.Parallel()
+
+	input := `<img src="assets/pic.jpg" alt="test">`
+	want := `<img src="pic.jpg" alt="test">`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() = %q, want %q", got, want)
+	}
+}
+
+func TestRewriteAssetPaths_SingleQuotes(t *testing.T) {
+	t.Parallel()
+
+	input := `<img src='assets/pic.jpg' alt='test'>`
+	want := `<img src='pic.jpg' alt='test'>`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() = %q, want %q", got, want)
+	}
+}
+
+func TestRewriteAssetPaths_MultipleImages(t *testing.T) {
+	t.Parallel()
+
+	input := `<p><img src="assets/one.png"><img src="assets/two.jpg"></p>`
+	want := `<p><img src="one.png"><img src="two.jpg"></p>`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() = %q, want %q", got, want)
+	}
+}
+
+func TestRewriteAssetPaths_NoAssets(t *testing.T) {
+	t.Parallel()
+
+	input := `<img src="photo.jpg" alt="test">`
+	want := `<img src="photo.jpg" alt="test">`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() = %q, want %q", got, want)
+	}
+}
+
+func TestRewriteAssetPaths_ExternalUrls(t *testing.T) {
+	t.Parallel()
+
+	input := `<img src="https://example.com/assets/image.jpg">`
+	want := `<img src="https://example.com/assets/image.jpg">`
+
+	got := rewriteAssetPaths(input)
+
+	if got != want {
+		t.Errorf("rewriteAssetPaths() should not modify external URLs, got %q, want %q", got, want)
+	}
+}
