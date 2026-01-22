@@ -259,7 +259,7 @@ Pages maintain discovery order (filesystem order).
 | Generated | Output |
 |-----------|--------|
 | Blog listing | `public/blog/index.html` |
-| RSS feed | `public/feed/index.xml` |
+| RSS feed | `public/feed.xml` |
 | Sitemap | `public/sitemap.xml` |
 | Robots | `public/robots.txt` |
 | 404 page | `public/404.html` |

@@ -233,7 +233,7 @@ If you don't provide a custom stylesheet, the default is used automatically.
 
 ## RSS Feed
 
-An RSS 2.0 feed is automatically generated at `/feed/index.xml` containing the 20 most recent blog posts. The feed uses `site.description` if provided.
+An RSS 2.0 feed is automatically generated at `/feed.xml` containing the 20 most recent blog posts. The feed uses `site.description` if provided.
 
 ## SEO
 
@@ -254,8 +254,7 @@ public/
 ├── robots.txt          # Crawler directives
 ├── sitemap.xml         # Site map for search engines
 ├── style.css           # Default stylesheet (or custom if provided in assets/)
-├── feed/
-│   └── index.xml       # RSS feed
+├── feed.xml            # RSS feed
 ├── about/
 │   └── index.html      # About page
 └── blog/

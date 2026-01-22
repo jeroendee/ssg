@@ -118,21 +118,22 @@ func TestServerStart(t *testing.T) {
 func TestServerServesIndexXML(t *testing.T) {
 	t.Parallel()
 
-	// Create temp directory with feed/index.xml (no index.html)
+	// Test xmlIndexHandler serves index.xml when no index.html exists
+	// Note: RSS feed is now at /feed.xml, but this tests other XML index files (e.g., sitemaps)
 	dir := t.TempDir()
-	feedDir := filepath.Join(dir, "feed")
-	if err := os.MkdirAll(feedDir, 0755); err != nil {
+	xmlDir := filepath.Join(dir, "sitemap")
+	if err := os.MkdirAll(xmlDir, 0755); err != nil {
 		t.Fatal(err)
 	}
 
 	xmlContent := `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-  <channel>
-    <title>Test Feed</title>
-  </channel>
-</rss>`
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://example.com/</loc>
+  </url>
+</urlset>`
 
-	if err := os.WriteFile(filepath.Join(feedDir, "index.xml"), []byte(xmlContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(xmlDir, "index.xml"), []byte(xmlContent), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -148,15 +149,15 @@ func TestServerServesIndexXML(t *testing.T) {
 	// Wait for server to be ready
 	time.Sleep(50 * time.Millisecond)
 
-	// Make request to /feed/ (trailing slash for directory)
+	// Make request to /sitemap/ (trailing slash for directory)
 	addr := srv.Addr()
 	if addr == "" {
 		t.Fatal("Addr() returned empty string")
 	}
 
-	resp, err := http.Get("http://" + addr + "/feed/")
+	resp, err := http.Get("http://" + addr + "/sitemap/")
 	if err != nil {
-		t.Fatalf("GET /feed/ failed: %v", err)
+		t.Fatalf("GET /sitemap/ failed: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -370,12 +371,12 @@ func TestHandler_AllowsLegitimatePathsWithTraversalCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create feed/index.xml
-	feedDir := filepath.Join(dir, "feed")
-	if err := os.MkdirAll(feedDir, 0755); err != nil {
+	// Create sitemap/index.xml (testing xmlIndexHandler for other XML content)
+	sitemapDir := filepath.Join(dir, "sitemap")
+	if err := os.MkdirAll(sitemapDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(feedDir, "index.xml"), []byte("<feed/>"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(sitemapDir, "index.xml"), []byte("<urlset/>"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -392,10 +393,10 @@ func TestHandler_AllowsLegitimatePathsWithTraversalCleanup(t *testing.T) {
 			wantContains: "root",
 		},
 		{
-			name:         "feed directory with index.xml",
-			path:         "/feed/",
+			name:         "sitemap directory with index.xml",
+			path:         "/sitemap/",
 			wantStatus:   http.StatusOK,
-			wantContains: "<feed/>",
+			wantContains: "<urlset/>",
 		},
 	}
 

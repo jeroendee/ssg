@@ -175,7 +175,7 @@ The SSG operates as a command-line tool that transforms a source directory into 
    ├── robots.txt
    ├── sitemap.xml
    ├── style.css
-   ├── feed/index.xml
+   ├── feed.xml
    ├── {page}/index.html
    └── blog/
        ├── index.html

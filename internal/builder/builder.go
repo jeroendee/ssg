@@ -370,12 +370,7 @@ func (b *Builder) writeFeed(r *renderer.Renderer, site model.Site) error {
 		return nil
 	}
 
-	dir := filepath.Join(b.cfg.OutputDir, "feed")
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-
-	return os.WriteFile(filepath.Join(dir, "index.xml"), []byte(xml), 0644)
+	return os.WriteFile(filepath.Join(b.cfg.OutputDir, "feed.xml"), []byte(xml), 0644)
 }
 
 // write404 writes the 404 error page.

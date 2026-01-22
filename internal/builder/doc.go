@@ -7,7 +7,7 @@
 //  3. Render HTML using templates
 //  4. Write output with clean URLs
 //  5. Copy static assets
-//  6. Generate RSS feed at /feed/index.xml
+//  6. Generate RSS feed at /feed.xml
 //  7. Generate sitemap.xml with all pages and posts
 //  8. Generate robots.txt with sitemap reference
 //
