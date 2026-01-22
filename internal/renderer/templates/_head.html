@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     {{if .Site.Favicon}}<link rel="icon" href="{{.Site.Favicon}}" type="{{.Site.FaviconMIMEType}}">{{end}}
-    <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed/">
+    <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed.xml">
     <!-- Open Graph tags -->
     <meta property="og:title" content="{{if .PageTitle}}{{.PageTitle}}{{else}}{{.Site.Title}}{{end}}">
     {{if .Summary}}<meta property="og:description" content="{{.Summary}}">{{end}}
