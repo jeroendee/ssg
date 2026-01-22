@@ -622,9 +622,9 @@ func TestBuild_GeneratesRSSFeed(t *testing.T) {
 		t.Fatalf("Build() error = %v", err)
 	}
 
-	feedPath := filepath.Join(outputDir, "feed", "index.xml")
+	feedPath := filepath.Join(outputDir, "feed.xml")
 	if _, err := os.Stat(feedPath); os.IsNotExist(err) {
-		t.Errorf("Build() did not generate feed/index.xml at %s", feedPath)
+		t.Errorf("Build() did not generate feed.xml at %s", feedPath)
 	}
 
 	content, err := os.ReadFile(feedPath)
@@ -659,9 +659,9 @@ func TestBuild_SkipsFeedWhenNoPosts(t *testing.T) {
 		t.Fatalf("Build() error = %v", err)
 	}
 
-	feedPath := filepath.Join(outputDir, "feed", "index.xml")
+	feedPath := filepath.Join(outputDir, "feed.xml")
 	if _, err := os.Stat(feedPath); !os.IsNotExist(err) {
-		t.Errorf("Build() should not create feed when no posts exist")
+		t.Errorf("Build() should not create feed.xml when no posts exist")
 	}
 }
 
