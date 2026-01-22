@@ -1400,6 +1400,125 @@ func TestRenderer_SetVersion(t *testing.T) {
 	}
 }
 
+func TestRenderBlogPost_OGImagePreferredOverLogo(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+		Logo:    "/logo.svg",
+		OGImage: "/social-image.png",
+	}
+	post := model.Post{
+		Page: model.Page{
+			Title:   "Test Post",
+			Slug:    "test-post",
+			Content: "<p>Content</p>",
+		},
+		Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+	}
+
+	got, err := r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+
+	// OGImage should be preferred over Logo
+	wantOGImage := `<meta property="og:image" content="https://example.com/social-image.png">`
+	if !strings.Contains(got, wantOGImage) {
+		t.Errorf("RenderBlogPost() should use OGImage for og:image, want %q", wantOGImage)
+	}
+
+	wantTwitterImage := `<meta name="twitter:image" content="https://example.com/social-image.png">`
+	if !strings.Contains(got, wantTwitterImage) {
+		t.Errorf("RenderBlogPost() should use OGImage for twitter:image, want %q", wantTwitterImage)
+	}
+
+	// Should NOT use the logo
+	unwantOGImage := `<meta property="og:image" content="https://example.com/logo.svg">`
+	if strings.Contains(got, unwantOGImage) {
+		t.Error("RenderBlogPost() should NOT use Logo when OGImage is set")
+	}
+}
+
+func TestRenderBlogPost_LogoFallbackWhenOGImageEmpty(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+		Logo:    "/logo.svg",
+		OGImage: "", // Empty - should fall back to Logo
+	}
+	post := model.Post{
+		Page: model.Page{
+			Title:   "Test Post",
+			Slug:    "test-post",
+			Content: "<p>Content</p>",
+		},
+		Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+	}
+
+	got, err := r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+
+	// Should fall back to Logo when OGImage is empty
+	wantOGImage := `<meta property="og:image" content="https://example.com/logo.svg">`
+	if !strings.Contains(got, wantOGImage) {
+		t.Errorf("RenderBlogPost() should fallback to Logo for og:image, want %q", wantOGImage)
+	}
+}
+
+func TestRenderBlogPost_NoOGImageWhenBothEmpty(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+		Logo:    "",
+		OGImage: "",
+	}
+	post := model.Post{
+		Page: model.Page{
+			Title:   "Test Post",
+			Slug:    "test-post",
+			Content: "<p>Content</p>",
+		},
+		Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+	}
+
+	got, err := r.RenderBlogPost(site, post)
+	if err != nil {
+		t.Fatalf("RenderBlogPost() error = %v", err)
+	}
+
+	// Should NOT have og:image when both are empty
+	if strings.Contains(got, `<meta property="og:image"`) {
+		t.Error("RenderBlogPost() should NOT include og:image when both OGImage and Logo are empty")
+	}
+
+	if strings.Contains(got, `<meta name="twitter:image"`) {
+		t.Error("RenderBlogPost() should NOT include twitter:image when both OGImage and Logo are empty")
+	}
+}
+
 func TestRenderBase_GoatCounterAnalytics(t *testing.T) {
 	t.Parallel()
 

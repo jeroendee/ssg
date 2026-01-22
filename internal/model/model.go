@@ -41,6 +41,7 @@ type Site struct {
 	BaseURL     string
 	Author      string
 	Logo        string
+	OGImage     string
 	Favicon     string
 	Navigation  []NavItem
 	Pages       []Page
@@ -55,6 +56,7 @@ type Config struct {
 	BaseURL     string
 	Author      string
 	Logo        string
+	OGImage     string
 	Favicon     string
 	ContentDir  string
 	OutputDir   string

@@ -16,6 +16,7 @@ type yamlConfig struct {
 		BaseURL     string `yaml:"baseURL"`
 		Author      string `yaml:"author"`
 		Logo        string `yaml:"logo"`
+		OGImage     string `yaml:"ogImage"`
 		Favicon     string `yaml:"favicon"`
 	} `yaml:"site"`
 	Build struct {
@@ -69,6 +70,7 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 		BaseURL:     yc.Site.BaseURL,
 		Author:      yc.Site.Author,
 		Logo:        yc.Site.Logo,
+		OGImage:     yc.Site.OGImage,
 		Favicon:     yc.Site.Favicon,
 		ContentDir:  yc.Build.Content,
 		OutputDir:   yc.Build.Output,

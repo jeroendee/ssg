@@ -47,6 +47,7 @@ site:
   baseURL: https://example.com
   author: Your Name
   logo: /logo.svg
+  ogImage: /social-image.png  # For social sharing (LinkedIn, Twitter)
   favicon: /favicon.svg
 
 build:
@@ -223,6 +224,7 @@ If you don't provide a custom stylesheet, the default is used automatically.
 | `site.baseURL` | Yes | - | Root URL where the site will be hosted |
 | `site.author` | No | - | Author name for metadata |
 | `site.logo` | No | - | Path to site logo (e.g., `/logo.svg`) |
+| `site.ogImage` | No | - | Image for social sharing (1200x627 PNG/JPG recommended). Falls back to logo. |
 | `site.favicon` | No | - | Path to favicon (e.g., `/favicon.svg`) |
 | `site.description` | No | - | Site description for RSS feed |
 | `build.assets` | No | `assets` | Directory containing static assets (CSS, images). A default style.css is provided; add your own to override. |

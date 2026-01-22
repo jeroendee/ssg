@@ -14,6 +14,17 @@ site:
   # Author name (optional) - used for metadata
   author: Your Name
 
+  # Logo (optional) - path to site logo, displayed in header
+  # logo: /logo.svg
+
+  # OG Image (optional) - image for social media sharing (LinkedIn, Twitter, etc.)
+  # Recommended: 1200x627 PNG/JPG (SVG not supported by most platforms)
+  # Falls back to logo if not set
+  # ogImage: /social-image.png
+
+  # Favicon (optional) - browser tab icon
+  # favicon: /favicon.ico
+
 # Build settings
 build:
   # Assets directory (default: "assets")
