@@ -388,3 +388,46 @@ func TestLoad_WithoutGoatCounter(t *testing.T) {
 		t.Errorf("Analytics.GoatCounter = %q, want empty string", cfg.Analytics.GoatCounter)
 	}
 }
+
+func TestLoad_WithOGImage(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+  ogImage: "/social-image.png"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.OGImage != "/social-image.png" {
+		t.Errorf("OGImage = %q, want %q", cfg.OGImage, "/social-image.png")
+	}
+}
+
+func TestLoad_WithoutOGImage(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.OGImage != "" {
+		t.Errorf("OGImage = %q, want empty string", cfg.OGImage)
+	}
+}

@@ -126,12 +126,15 @@ func (r *Renderer) RenderPage(site model.Site, page model.Page) (string, error) 
 	return buf.String(), nil
 }
 
-// ogImageURL returns the absolute URL for OG image, using site logo as fallback.
+// ogImageURL returns the absolute URL for OG image, preferring OGImage with Logo fallback.
 func ogImageURL(site model.Site) string {
-	if site.Logo == "" {
-		return ""
+	if site.OGImage != "" {
+		return site.BaseURL + site.OGImage
 	}
-	return site.BaseURL + site.Logo
+	if site.Logo != "" {
+		return site.BaseURL + site.Logo
+	}
+	return ""
 }
 
 // RenderBlogList renders the blog listing page with all posts.
