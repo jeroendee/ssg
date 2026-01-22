@@ -42,7 +42,7 @@ The server serves static files from the specified directory (default: config's `
 | `/about/` | `/about/index.html` |
 | `/blog/my-post/` | `/blog/my-post/index.html` |
 | `/style.css` | `/style.css` |
-| `/feed/` | `/feed/index.xml` |
+| `/feed.xml` | `/feed.xml` |
 
 ### Clean URL Handling
 
@@ -276,7 +276,7 @@ open http://localhost:8080
 # Test with curl
 curl -I http://localhost:8080/
 curl http://localhost:8080/about/
-curl http://localhost:8080/feed/
+curl http://localhost:8080/feed.xml
 ```
 
 ### Verification Checklist
@@ -285,7 +285,7 @@ curl http://localhost:8080/feed/
 - [ ] Pages load at `/{slug}/`
 - [ ] Posts load at `/blog/{slug}/`
 - [ ] Blog listing loads at `/blog/`
-- [ ] RSS feed loads at `/feed/`
+- [ ] RSS feed loads at `/feed.xml`
 - [ ] CSS loads correctly
 - [ ] 404 page shows for missing paths
 - [ ] Server shuts down cleanly with Ctrl+C

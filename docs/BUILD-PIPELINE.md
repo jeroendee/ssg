@@ -322,7 +322,7 @@ Sitemap: {baseURL}/sitemap.xml
 
 ### RSS Feed Generation
 
-**Output**: `{output}/feed/index.xml`
+**Output**: `{output}/feed.xml`
 
 **Format**: RSS 2.0
 
@@ -362,8 +362,7 @@ Sitemap: {baseURL}/sitemap.xml
 ├── sitemap.xml          # Sitemap
 ├── style.css            # Stylesheet
 ├── [global assets]      # Copied from assets/
-├── feed/
-│   └── index.xml        # RSS feed
+├── feed.xml             # RSS feed
 ├── {page-slug}/
 │   └── index.html       # Static page
 └── blog/

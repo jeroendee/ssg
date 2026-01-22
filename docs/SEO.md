@@ -205,9 +205,9 @@ ISO 8601 date: `YYYY-MM-DD`
 
 ### Location
 
-`{output}/feed/index.xml`
+`{output}/feed.xml`
 
-**Note**: Located at `/feed/index.xml` for clean URL (`/feed/`)
+**Note**: Located at `/feed.xml`
 
 ### Format
 
