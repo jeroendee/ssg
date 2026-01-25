@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/jeroendee/ssg/internal/assets"
 	"github.com/jeroendee/ssg/internal/model"
@@ -207,6 +209,11 @@ func (b *Builder) Build() error {
 
 	// Generate robots.txt
 	if err := b.generateRobotsTxt(); err != nil {
+		return err
+	}
+
+	// Generate build.json with timestamp for sync verification
+	if err := b.writeBuildTimestamp(); err != nil {
 		return err
 	}
 
@@ -467,6 +474,26 @@ func (b *Builder) generateRobotsTxt() error {
 	content := "User-agent: *\nAllow: /\nSitemap: " + b.cfg.BaseURL + "/sitemap.xml\n"
 	robotsPath := filepath.Join(b.cfg.OutputDir, "robots.txt")
 	return os.WriteFile(robotsPath, []byte(content), 0644)
+}
+
+// buildTimestamp represents the JSON structure for build.json.
+type buildTimestamp struct {
+	BuildTime string `json:"buildTime"`
+}
+
+// writeBuildTimestamp creates build.json with the current UTC timestamp.
+func (b *Builder) writeBuildTimestamp() error {
+	ts := buildTimestamp{
+		BuildTime: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	data, err := json.MarshalIndent(ts, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	buildPath := filepath.Join(b.cfg.OutputDir, "build.json")
+	return os.WriteFile(buildPath, data, 0644)
 }
 
 // sitemapURL represents a URL entry in the sitemap.
