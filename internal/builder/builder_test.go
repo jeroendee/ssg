@@ -2,10 +2,12 @@ package builder
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jeroendee/ssg/internal/assets"
 	"github.com/jeroendee/ssg/internal/model"
@@ -1618,5 +1620,66 @@ Here is an image:
 	// Should NOT contain: src="assets/test-image.png"
 	if strings.Contains(string(htmlContent), `src="assets/test-image.png"`) {
 		t.Errorf("HTML should NOT contain assets/ prefix, got:\n%s", htmlContent)
+	}
+}
+
+func TestBuild_GeneratesBuildTimestamp(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
+	outputDir := t.TempDir()
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+	}
+
+	beforeBuild := time.Now().UTC()
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	afterBuild := time.Now().UTC()
+
+	// Verify build.json exists
+	buildPath := filepath.Join(outputDir, "build.json")
+	if _, err := os.Stat(buildPath); os.IsNotExist(err) {
+		t.Fatalf("Build() did not generate build.json at %s", buildPath)
+	}
+
+	// Verify JSON structure and format
+	content, err := os.ReadFile(buildPath)
+	if err != nil {
+		t.Fatalf("failed to read build.json: %v", err)
+	}
+
+	// Parse as JSON
+	var ts struct {
+		BuildTime string `json:"buildTime"`
+	}
+	if err := json.Unmarshal(content, &ts); err != nil {
+		t.Fatalf("build.json is not valid JSON: %v", err)
+	}
+
+	// Verify buildTime field exists
+	if ts.BuildTime == "" {
+		t.Error("build.json buildTime field is empty")
+	}
+
+	// Verify RFC 3339 format by parsing
+	buildTime, err := time.Parse(time.RFC3339, ts.BuildTime)
+	if err != nil {
+		t.Errorf("build.json buildTime is not RFC 3339 format: %v", err)
+	}
+
+	// Verify timestamp is within expected range
+	if buildTime.Before(beforeBuild.Add(-time.Second)) || buildTime.After(afterBuild.Add(time.Second)) {
+		t.Errorf("build.json buildTime %v is outside expected range [%v, %v]", buildTime, beforeBuild, afterBuild)
 	}
 }
