@@ -44,7 +44,7 @@ type templateData struct {
 	Version      string
 	PageType     string
 	Content      template.HTML
-	Page struct {
+	Page         struct {
 		Title       string
 		Content     template.HTML
 		DateAnchors []string
