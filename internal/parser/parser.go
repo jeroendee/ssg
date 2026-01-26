@@ -12,6 +12,7 @@ import (
 	"github.com/jeroendee/ssg/internal/model"
 	"github.com/jeroendee/ssg/internal/wordcount"
 	"github.com/yuin/goldmark"
+	gmparser "github.com/yuin/goldmark/parser"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,10 +23,17 @@ type frontmatter struct {
 	Date    string `yaml:"date"`
 }
 
+// md is the configured Goldmark instance with auto heading IDs enabled.
+var md = goldmark.New(
+	goldmark.WithParserOptions(
+		gmparser.WithAutoHeadingID(),
+	),
+)
+
 // MarkdownToHTMLWithError converts markdown content to HTML and returns any conversion error.
-func MarkdownToHTMLWithError(md string) (string, error) {
+func MarkdownToHTMLWithError(markdown string) (string, error) {
 	var buf bytes.Buffer
-	if err := goldmark.Convert([]byte(md), &buf); err != nil {
+	if err := md.Convert([]byte(markdown), &buf); err != nil {
 		return "", fmt.Errorf("markdown conversion failed: %w", err)
 	}
 	return buf.String(), nil

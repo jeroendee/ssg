@@ -17,8 +17,8 @@ func TestParseMarkdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarkdownToHTMLWithError() error = %v", err)
 	}
-	if !strings.Contains(html, "<h1>Hello</h1>") {
-		t.Errorf("expected <h1>Hello</h1>, got %s", html)
+	if !strings.Contains(html, `<h1 id="hello">Hello</h1>`) {
+		t.Errorf("expected <h1 id=\"hello\">Hello</h1>, got %s", html)
 	}
 	if !strings.Contains(html, "<strong>bold</strong>") {
 		t.Errorf("expected <strong>bold</strong>, got %s", html)
@@ -49,8 +49,8 @@ This is the about page.`
 	if page.Slug != "about" {
 		t.Errorf("Slug = %q, want %q", page.Slug, "about")
 	}
-	if !strings.Contains(page.Content, "<h1>About</h1>") {
-		t.Errorf("Content should have HTML, got %q", page.Content)
+	if !strings.Contains(page.Content, `<h1 id="about">About</h1>`) {
+		t.Errorf("Content should have HTML with ID, got %q", page.Content)
 	}
 }
 
@@ -154,8 +154,8 @@ func TestMarkdownToHTML_ReturnsError(t *testing.T) {
 	if err != nil {
 		t.Errorf("MarkdownToHTMLWithError() unexpected error = %v", err)
 	}
-	if !strings.Contains(html, "<h1>Hello</h1>") {
-		t.Errorf("expected <h1>Hello</h1>, got %s", html)
+	if !strings.Contains(html, `<h1 id="hello">Hello</h1>`) {
+		t.Errorf("expected <h1 id=\"hello\">Hello</h1>, got %s", html)
 	}
 }
 
@@ -317,5 +317,73 @@ And another image:
 		if post.Assets[i] != wantAssets[i] {
 			t.Errorf("Assets[%d] = %q, want %q", i, post.Assets[i], wantAssets[i])
 		}
+	}
+}
+
+func TestMarkdownToHTML_HeadingIDs(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name         string
+		markdown     string
+		wantContains string
+	}{
+		{
+			name:         "h1 gets ID",
+			markdown:     "# Hello",
+			wantContains: `<h1 id="hello">Hello</h1>`,
+		},
+		{
+			name:         "h2 gets ID",
+			markdown:     "## Features",
+			wantContains: `<h2 id="features">Features</h2>`,
+		},
+		{
+			name:         "h3 gets ID",
+			markdown:     "### Getting Started",
+			wantContains: `<h3 id="getting-started">Getting Started</h3>`,
+		},
+		{
+			name:         "h4 gets ID",
+			markdown:     "#### Installation Steps",
+			wantContains: `<h4 id="installation-steps">Installation Steps</h4>`,
+		},
+		{
+			name:         "h5 gets ID",
+			markdown:     "##### Advanced Options",
+			wantContains: `<h5 id="advanced-options">Advanced Options</h5>`,
+		},
+		{
+			name:         "h6 gets ID",
+			markdown:     "###### Footnotes",
+			wantContains: `<h6 id="footnotes">Footnotes</h6>`,
+		},
+		{
+			name:         "spaces become hyphens",
+			markdown:     "## Hello World",
+			wantContains: `<h2 id="hello-world">Hello World</h2>`,
+		},
+		{
+			name:         "special characters removed",
+			markdown:     "## Hello World!",
+			wantContains: `<h2 id="hello-world">Hello World!</h2>`,
+		},
+		{
+			name:         "mixed case becomes lowercase",
+			markdown:     "## Hello WORLD",
+			wantContains: `<h2 id="hello-world">Hello WORLD</h2>`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			html, err := parser.MarkdownToHTMLWithError(tt.markdown)
+			if err != nil {
+				t.Fatalf("MarkdownToHTMLWithError() error = %v", err)
+			}
+			if !strings.Contains(html, tt.wantContains) {
+				t.Errorf("MarkdownToHTMLWithError() = %q, want to contain %q", html, tt.wantContains)
+			}
+		})
 	}
 }
