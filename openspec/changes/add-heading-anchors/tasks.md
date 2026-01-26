@@ -18,6 +18,33 @@
    - Verify heading IDs in output: `grep -r 'id="' public/`
    - Test browser navigation to `#anchor` links
 
+---
+
+## Phase 2: Clickable Anchor Links
+
+- [x] **Write failing tests for anchor link wrapping**
+   - Test heading content is wrapped in `<a href="#id">`
+   - Test all heading levels (h1-h6) have anchor links
+   - Verification: `go test ./internal/parser/... -run TestMarkdown` fails
+
+- [x] **Create custom Goldmark heading renderer**
+   - Create `internal/parser/anchor_renderer.go`
+   - Implement custom renderer that wraps heading content in anchor tags
+   - Register renderer with Goldmark instance
+   - Verification: Tests pass
+
+- [x] **Add CSS styling for anchor links**
+   - Heading links inherit text color
+   - Remove default underline
+   - Add hover underline
+   - Verification: Visual inspection in browser
+
+- [x] **Manual verification**
+   - Build dev site: `make dev`
+   - Click heading → URL updates with fragment
+   - Right-click heading → "Copy link" includes fragment
+   - Refresh with fragment → scrolls to heading
+
 ## Dependencies
 
 None - single package change with no external dependencies.

@@ -1,5 +1,7 @@
 # Proposal: Add Heading Anchor Links
 
+**Status**: Complete (Phase 1 + Phase 2)
+
 ## Summary
 
 Enable automatic ID generation for all heading levels (h1-h6) so users can link directly to specific sections of pages and posts.
@@ -30,8 +32,23 @@ Configure Goldmark (already in use) with `parser.WithAutoHeadingID()` to automat
 - **After**: `<h2 id="features">Features</h2>`
 - **Benefit**: Users can share links like `/about/#features` to jump directly to that section
 
+## Phase 2: Clickable Anchor Links
+
+**Motivation**: While heading IDs enable URL fragment linking, users expect to be able to click headings directly to update the URL for bookmarking and sharing.
+
+**Approach**: Use a custom Goldmark renderer to wrap heading content in anchor links:
+
+- **Before**: `<h2 id="features">Features</h2>`
+- **After**: `<h2 id="features"><a href="#features">Features</a></h2>`
+
+**Benefits**:
+- Clickable headings update browser URL
+- Right-click → "Copy link" works naturally
+- No JavaScript required (progressive enhancement)
+- Works in RSS feeds and non-browser contexts
+
 ## Out of Scope
 
 - Table of contents generation
 - Custom ID specification in frontmatter
-- Anchor link icons (visible link symbols next to headings)
+- Visible anchor icons (§ or 🔗 symbols next to headings)

@@ -13,6 +13,8 @@ import (
 	"github.com/jeroendee/ssg/internal/wordcount"
 	"github.com/yuin/goldmark"
 	gmparser "github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer"
+	"github.com/yuin/goldmark/util"
 	"gopkg.in/yaml.v3"
 )
 
@@ -23,10 +25,15 @@ type frontmatter struct {
 	Date    string `yaml:"date"`
 }
 
-// md is the configured Goldmark instance with auto heading IDs enabled.
+// md is the configured Goldmark instance with auto heading IDs and anchor links.
 var md = goldmark.New(
 	goldmark.WithParserOptions(
 		gmparser.WithAutoHeadingID(),
+	),
+	goldmark.WithRendererOptions(
+		renderer.WithNodeRenderers(
+			util.Prioritized(newAnchorHeadingRenderer(), 100),
+		),
 	),
 )
 

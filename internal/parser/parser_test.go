@@ -17,8 +17,8 @@ func TestParseMarkdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarkdownToHTMLWithError() error = %v", err)
 	}
-	if !strings.Contains(html, `<h1 id="hello">Hello</h1>`) {
-		t.Errorf("expected <h1 id=\"hello\">Hello</h1>, got %s", html)
+	if !strings.Contains(html, `<h1 id="hello"><a href="#hello">Hello</a></h1>`) {
+		t.Errorf("expected <h1 id=\"hello\"><a href=\"#hello\">Hello</a></h1>, got %s", html)
 	}
 	if !strings.Contains(html, "<strong>bold</strong>") {
 		t.Errorf("expected <strong>bold</strong>, got %s", html)
@@ -49,8 +49,8 @@ This is the about page.`
 	if page.Slug != "about" {
 		t.Errorf("Slug = %q, want %q", page.Slug, "about")
 	}
-	if !strings.Contains(page.Content, `<h1 id="about">About</h1>`) {
-		t.Errorf("Content should have HTML with ID, got %q", page.Content)
+	if !strings.Contains(page.Content, `<h1 id="about"><a href="#about">About</a></h1>`) {
+		t.Errorf("Content should have HTML with ID and anchor, got %q", page.Content)
 	}
 }
 
@@ -154,8 +154,8 @@ func TestMarkdownToHTML_ReturnsError(t *testing.T) {
 	if err != nil {
 		t.Errorf("MarkdownToHTMLWithError() unexpected error = %v", err)
 	}
-	if !strings.Contains(html, `<h1 id="hello">Hello</h1>`) {
-		t.Errorf("expected <h1 id=\"hello\">Hello</h1>, got %s", html)
+	if !strings.Contains(html, `<h1 id="hello"><a href="#hello">Hello</a></h1>`) {
+		t.Errorf("expected <h1 id=\"hello\"><a href=\"#hello\">Hello</a></h1>, got %s", html)
 	}
 }
 
@@ -328,49 +328,49 @@ func TestMarkdownToHTML_HeadingIDs(t *testing.T) {
 		wantContains string
 	}{
 		{
-			name:         "h1 gets ID",
+			name:         "h1 gets ID and anchor",
 			markdown:     "# Hello",
-			wantContains: `<h1 id="hello">Hello</h1>`,
+			wantContains: `<h1 id="hello"><a href="#hello">Hello</a></h1>`,
 		},
 		{
-			name:         "h2 gets ID",
+			name:         "h2 gets ID and anchor",
 			markdown:     "## Features",
-			wantContains: `<h2 id="features">Features</h2>`,
+			wantContains: `<h2 id="features"><a href="#features">Features</a></h2>`,
 		},
 		{
-			name:         "h3 gets ID",
+			name:         "h3 gets ID and anchor",
 			markdown:     "### Getting Started",
-			wantContains: `<h3 id="getting-started">Getting Started</h3>`,
+			wantContains: `<h3 id="getting-started"><a href="#getting-started">Getting Started</a></h3>`,
 		},
 		{
-			name:         "h4 gets ID",
+			name:         "h4 gets ID and anchor",
 			markdown:     "#### Installation Steps",
-			wantContains: `<h4 id="installation-steps">Installation Steps</h4>`,
+			wantContains: `<h4 id="installation-steps"><a href="#installation-steps">Installation Steps</a></h4>`,
 		},
 		{
-			name:         "h5 gets ID",
+			name:         "h5 gets ID and anchor",
 			markdown:     "##### Advanced Options",
-			wantContains: `<h5 id="advanced-options">Advanced Options</h5>`,
+			wantContains: `<h5 id="advanced-options"><a href="#advanced-options">Advanced Options</a></h5>`,
 		},
 		{
-			name:         "h6 gets ID",
+			name:         "h6 gets ID and anchor",
 			markdown:     "###### Footnotes",
-			wantContains: `<h6 id="footnotes">Footnotes</h6>`,
+			wantContains: `<h6 id="footnotes"><a href="#footnotes">Footnotes</a></h6>`,
 		},
 		{
-			name:         "spaces become hyphens",
+			name:         "spaces become hyphens in anchor",
 			markdown:     "## Hello World",
-			wantContains: `<h2 id="hello-world">Hello World</h2>`,
+			wantContains: `<h2 id="hello-world"><a href="#hello-world">Hello World</a></h2>`,
 		},
 		{
-			name:         "special characters removed",
+			name:         "special characters removed from ID but preserved in text",
 			markdown:     "## Hello World!",
-			wantContains: `<h2 id="hello-world">Hello World!</h2>`,
+			wantContains: `<h2 id="hello-world"><a href="#hello-world">Hello World!</a></h2>`,
 		},
 		{
-			name:         "mixed case becomes lowercase",
+			name:         "mixed case becomes lowercase in ID",
 			markdown:     "## Hello WORLD",
-			wantContains: `<h2 id="hello-world">Hello WORLD</h2>`,
+			wantContains: `<h2 id="hello-world"><a href="#hello-world">Hello WORLD</a></h2>`,
 		},
 	}
 
