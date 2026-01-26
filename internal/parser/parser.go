@@ -93,14 +93,30 @@ func ParsePage(path string) (*model.Page, error) {
 	}
 
 	return &model.Page{
-		Title:   fm.Title,
-		Slug:    slug,
-		Content: html,
-		Path:    pagePath,
+		Title:       fm.Title,
+		Slug:        slug,
+		Content:     html,
+		Path:        pagePath,
+		DateAnchors: ExtractDateAnchors(body),
 	}, nil
 }
 
 var dateFilenameRegex = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2})-(.+)\.md$`)
+var dateAnchorRegex = regexp.MustCompile(`(?m)^#{1,6} \*(\d{4}-\d{2}-\d{2})\*`)
+
+// ExtractDateAnchors finds date headings (h1-h6) in italic format from markdown.
+func ExtractDateAnchors(markdown string) []string {
+	matches := dateAnchorRegex.FindAllStringSubmatch(markdown, -1)
+	if matches == nil {
+		return []string{}
+	}
+	dates := make([]string, len(matches))
+	for i, m := range matches {
+		dates[i] = m[1]
+	}
+	return dates
+}
+
 var assetRefRegex = regexp.MustCompile(`!\[.*?\]\((assets/[^)]+)\)`)
 
 // ExtractAssetReferences finds all asset references in markdown content.
