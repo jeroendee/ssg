@@ -5,6 +5,7 @@ A minimal static site generator for blogs, written in Go.
 ## Features
 
 - Markdown to HTML conversion with [Goldmark](https://github.com/yuin/goldmark)
+- Automatic heading anchors with clickable links for section navigation
 - YAML frontmatter support
 - Blog posts with automatic date extraction from filenames
 - Static pages
