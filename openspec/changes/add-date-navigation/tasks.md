@@ -10,7 +10,7 @@
 ### 2. Implement date anchor extraction in parser
 - [x] **File**: `internal/parser/parser.go`
 - [x] **Change**: Add `ExtractDateAnchors(markdown string) []string` function
-- [x] **Pattern**: Regex `^#### \*(\d{4}-\d{2}-\d{2})\*` for h4 date headings
+- [x] **Pattern**: Regex `^#{1,6} \*(\d{4}-\d{2}-\d{2})\*` for date headings at any level (h1-h6)
 - [x] **Integration**: Call in `ParsePage()` before markdown conversion
 - [x] **Validation**: Unit tests for extraction with various inputs
 

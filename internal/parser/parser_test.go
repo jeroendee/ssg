@@ -379,9 +379,9 @@ func TestExtractDateAnchors(t *testing.T) {
 			want:     []string{},
 		},
 		{
-			name:     "ignore dates in other heading levels",
-			markdown: "# *2026-01-26*\n## *2026-01-25*\n### *2026-01-24*\n##### *2026-01-22*\n###### *2026-01-21*",
-			want:     []string{},
+			name:     "accept dates at all heading levels",
+			markdown: "# *2026-01-26*\n## *2026-01-25*\n### *2026-01-24*\n#### *2026-01-23*\n##### *2026-01-22*\n###### *2026-01-21*",
+			want:     []string{"2026-01-26", "2026-01-25", "2026-01-24", "2026-01-23", "2026-01-22", "2026-01-21"},
 		},
 		{
 			name:     "ignore dates without italic",

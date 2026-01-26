@@ -15,7 +15,7 @@ The `/now` page contains date-based entries (e.g., `#### *2026-01-26*`) that use
 
 ## Approach
 
-1. **Parsing**: Extract h4 date headings (`#### *YYYY-MM-DD*`) from markdown source during page parsing
+1. **Parsing**: Extract date headings at any level h1-h6 (`# *YYYY-MM-DD*` through `###### *YYYY-MM-DD*`) from markdown source during page parsing
 2. **Model**: Add `DateAnchors []string` field to Page struct
 3. **Rendering**: Render `<details>/<summary>` dropdown with anchor links when dates exist
 4. **Styling**: Add CSS for dropdown using existing Solarized color variables
