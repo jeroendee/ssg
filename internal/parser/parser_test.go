@@ -197,6 +197,42 @@ title: "My Post"
 	}
 }
 
+func TestParsePage_ExtractsDateAnchors(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	file := filepath.Join(dir, "now.md")
+	content := `---
+title: "Now"
+---
+# What I'm doing now
+
+#### *2026-01-26*
+
+Working on the SSG project.
+
+#### *2026-01-20*
+
+Started a new feature.`
+	if err := os.WriteFile(file, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	page, err := parser.ParsePage(file)
+	if err != nil {
+		t.Fatalf("ParsePage() error = %v", err)
+	}
+	wantAnchors := []string{"2026-01-26", "2026-01-20"}
+	if len(page.DateAnchors) != len(wantAnchors) {
+		t.Errorf("DateAnchors = %v, want %v", page.DateAnchors, wantAnchors)
+		return
+	}
+	for i := range page.DateAnchors {
+		if page.DateAnchors[i] != wantAnchors[i] {
+			t.Errorf("DateAnchors[%d] = %q, want %q", i, page.DateAnchors[i], wantAnchors[i])
+		}
+	}
+}
+
 func TestParsePage_HomeMdGetsEmptySlug(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
@@ -317,6 +353,67 @@ And another image:
 		if post.Assets[i] != wantAssets[i] {
 			t.Errorf("Assets[%d] = %q, want %q", i, post.Assets[i], wantAssets[i])
 		}
+	}
+}
+
+func TestExtractDateAnchors(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		markdown string
+		want     []string
+	}{
+		{
+			name:     "single date anchor",
+			markdown: "#### *2026-01-26*\n\nSome content here.",
+			want:     []string{"2026-01-26"},
+		},
+		{
+			name:     "multiple date anchors",
+			markdown: "#### *2026-01-26*\n\nFirst entry\n\n#### *2026-01-20*\n\nSecond entry",
+			want:     []string{"2026-01-26", "2026-01-20"},
+		},
+		{
+			name:     "no date anchors",
+			markdown: "## Regular heading\n\nJust plain content.",
+			want:     []string{},
+		},
+		{
+			name:     "ignore dates in other heading levels",
+			markdown: "# *2026-01-26*\n## *2026-01-25*\n### *2026-01-24*\n##### *2026-01-22*\n###### *2026-01-21*",
+			want:     []string{},
+		},
+		{
+			name:     "ignore dates without italic",
+			markdown: "#### 2026-01-26\n\nNot in italics.",
+			want:     []string{},
+		},
+		{
+			name:     "empty markdown",
+			markdown: "",
+			want:     []string{},
+		},
+		{
+			name:     "date with surrounding content on heading",
+			markdown: "#### *2026-01-26* - Weekly update\n\nContent here.",
+			want:     []string{"2026-01-26"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := parser.ExtractDateAnchors(tt.markdown)
+			if len(got) != len(tt.want) {
+				t.Errorf("ExtractDateAnchors() = %v, want %v", got, tt.want)
+				return
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("ExtractDateAnchors()[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
 	}
 }
 

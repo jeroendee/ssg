@@ -44,9 +44,10 @@ type templateData struct {
 	Version      string
 	PageType     string
 	Content      template.HTML
-	Page         struct {
-		Title   string
-		Content template.HTML
+	Page struct {
+		Title       string
+		Content     template.HTML
+		DateAnchors []string
 	}
 }
 
@@ -118,6 +119,7 @@ func (r *Renderer) RenderPage(site model.Site, page model.Page) (string, error) 
 	}
 	data.Page.Title = page.Title
 	data.Page.Content = template.HTML(page.Content)
+	data.Page.DateAnchors = page.DateAnchors
 
 	var buf bytes.Buffer
 	if err := r.templates.ExecuteTemplate(&buf, "base.html", data); err != nil {

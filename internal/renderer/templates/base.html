@@ -4,6 +4,18 @@
     <main>
         {{if eq .PageType "page"}}
         <h1>{{.Page.Title}}</h1>
+        {{if .Page.DateAnchors}}
+        <nav class="date-nav">
+            <details>
+                <summary>Jump to date</summary>
+                <ul>
+                    {{range .Page.DateAnchors}}
+                    <li><a href="#{{.}}">{{.}}</a></li>
+                    {{end}}
+                </ul>
+            </details>
+        </nav>
+        {{end}}
         <div class="content">
             {{.Page.Content}}
         </div>
