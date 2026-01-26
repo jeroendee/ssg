@@ -35,8 +35,6 @@ The system SHALL transform markup content to rendered output format.
 - **WHEN** content contains headings at levels 1 through 6
 - **THEN** each heading element SHALL have an id attribute
 
-### Phase 2: Clickable Anchor Links
-
 #### Scenario: Heading content wrapped in anchor link
 
 - **WHEN** content contains a heading at any level (h1-h6)
