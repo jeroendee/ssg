@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jeroendee/ssg/internal/model"
 	"github.com/jeroendee/ssg/internal/parser"
 )
 
@@ -411,6 +412,156 @@ func TestExtractDateAnchors(t *testing.T) {
 			for i := range got {
 				if got[i] != tt.want[i] {
 					t.Errorf("ExtractDateAnchors()[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestGroupDatesByMonth(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name                  string
+		dates                 []string
+		wantCurrentMonth      []string
+		wantArchivedMonths    int
+		wantFirstArchiveYear  int
+		wantFirstArchiveMonth string
+	}{
+		{
+			name:                  "multiple months of dates",
+			dates:                 []string{"2026-02-03", "2026-02-01", "2026-01-31", "2026-01-15", "2025-12-20"},
+			wantCurrentMonth:      []string{"2026-02-03", "2026-02-01"},
+			wantArchivedMonths:    2,
+			wantFirstArchiveYear:  2026,
+			wantFirstArchiveMonth: "January",
+		},
+		{
+			name:               "single month of dates",
+			dates:              []string{"2026-01-27", "2026-01-26", "2026-01-25"},
+			wantCurrentMonth:   []string{"2026-01-27", "2026-01-26", "2026-01-25"},
+			wantArchivedMonths: 0,
+		},
+		{
+			name:               "empty input",
+			dates:              []string{},
+			wantCurrentMonth:   nil,
+			wantArchivedMonths: 0,
+		},
+		{
+			name:               "malformed dates excluded",
+			dates:              []string{"2026-01-27", "not-a-date", "2026-01-25"},
+			wantCurrentMonth:   []string{"2026-01-27", "2026-01-25"},
+			wantArchivedMonths: 0,
+		},
+		{
+			name:                  "archives ordered newest first",
+			dates:                 []string{"2026-03-01", "2026-01-15", "2025-11-20"},
+			wantCurrentMonth:      []string{"2026-03-01"},
+			wantArchivedMonths:    2,
+			wantFirstArchiveYear:  2026,
+			wantFirstArchiveMonth: "January",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			current, archived := parser.GroupDatesByMonth(tt.dates)
+
+			// Check current month dates
+			if len(current) != len(tt.wantCurrentMonth) {
+				t.Errorf("CurrentMonthDates = %v, want %v", current, tt.wantCurrentMonth)
+			} else {
+				for i := range current {
+					if current[i] != tt.wantCurrentMonth[i] {
+						t.Errorf("CurrentMonthDates[%d] = %q, want %q", i, current[i], tt.wantCurrentMonth[i])
+					}
+				}
+			}
+
+			// Check archived months count
+			if len(archived) != tt.wantArchivedMonths {
+				t.Errorf("ArchivedMonths count = %d, want %d", len(archived), tt.wantArchivedMonths)
+			}
+
+			// Check first archive details if applicable
+			if tt.wantArchivedMonths > 0 && len(archived) > 0 {
+				if archived[0].Year != tt.wantFirstArchiveYear {
+					t.Errorf("First archive Year = %d, want %d", archived[0].Year, tt.wantFirstArchiveYear)
+				}
+				if archived[0].Month != tt.wantFirstArchiveMonth {
+					t.Errorf("First archive Month = %q, want %q", archived[0].Month, tt.wantFirstArchiveMonth)
+				}
+			}
+		})
+	}
+}
+
+func TestGroupMonthsByYear(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name                    string
+		months                  []model.MonthGroup
+		wantYearCount           int
+		wantFirstYear           int
+		wantFirstYearMonthCount int
+	}{
+		{
+			name: "multiple years",
+			months: []model.MonthGroup{
+				{Year: 2026, Month: "January", Dates: []string{"2026-01-15"}},
+				{Year: 2025, Month: "December", Dates: []string{"2025-12-20"}},
+				{Year: 2025, Month: "November", Dates: []string{"2025-11-15"}},
+			},
+			wantYearCount:           2,
+			wantFirstYear:           2026,
+			wantFirstYearMonthCount: 1,
+		},
+		{
+			name: "single year",
+			months: []model.MonthGroup{
+				{Year: 2025, Month: "December", Dates: []string{"2025-12-20"}},
+				{Year: 2025, Month: "November", Dates: []string{"2025-11-15"}},
+				{Year: 2025, Month: "October", Dates: []string{"2025-10-10"}},
+			},
+			wantYearCount:           1,
+			wantFirstYear:           2025,
+			wantFirstYearMonthCount: 3,
+		},
+		{
+			name:          "empty input",
+			months:        []model.MonthGroup{},
+			wantYearCount: 0,
+		},
+		{
+			name: "years ordered newest first",
+			months: []model.MonthGroup{
+				{Year: 2024, Month: "March", Dates: []string{"2024-03-01"}},
+				{Year: 2026, Month: "January", Dates: []string{"2026-01-15"}},
+				{Year: 2025, Month: "June", Dates: []string{"2025-06-20"}},
+			},
+			wantYearCount:           3,
+			wantFirstYear:           2026,
+			wantFirstYearMonthCount: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := parser.GroupMonthsByYear(tt.months)
+
+			if len(got) != tt.wantYearCount {
+				t.Errorf("GroupMonthsByYear() year count = %d, want %d", len(got), tt.wantYearCount)
+			}
+
+			if tt.wantYearCount > 0 && len(got) > 0 {
+				if got[0].Year != tt.wantFirstYear {
+					t.Errorf("GroupMonthsByYear() first year = %d, want %d", got[0].Year, tt.wantFirstYear)
+				}
+				if len(got[0].Months) != tt.wantFirstYearMonthCount {
+					t.Errorf("GroupMonthsByYear() first year month count = %d, want %d", len(got[0].Months), tt.wantFirstYearMonthCount)
 				}
 			}
 		})

@@ -6,14 +6,39 @@
         <h1>{{.Page.Title}}</h1>
         {{if .Page.DateAnchors}}
         <nav class="date-nav">
-            <details>
-                <summary>Jump to date</summary>
-                <ul>
-                    {{range .Page.DateAnchors}}
-                    <li><a href="#{{.}}">{{.}}</a></li>
+            <div class="date-nav-container">
+                <div class="current-month">
+                    <details open>
+                        <summary>Jump to date</summary>
+                        <ul>
+                            {{range .Page.CurrentMonthDates}}
+                            <li><a href="#{{.}}">{{.}}</a></li>
+                            {{end}}
+                        </ul>
+                    </details>
+                </div>
+                <div class="archive">
+                    {{if .Page.ArchivedYears}}
+                    {{range .Page.ArchivedYears}}
+                    <details>
+                        <summary>{{.Year}}</summary>
+                        {{range .Months}}
+                        <details>
+                            <summary>{{.Month}}</summary>
+                            <ul>
+                                {{range .Dates}}
+                                <li><a href="#{{.}}">{{.}}</a></li>
+                                {{end}}
+                            </ul>
+                        </details>
+                        {{end}}
+                    </details>
                     {{end}}
-                </ul>
-            </details>
+                    {{else}}
+                    <p class="archive-empty">No archives yet</p>
+                    {{end}}
+                </div>
+            </div>
         </nav>
         {{end}}
         <div class="content">
