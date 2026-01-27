@@ -568,6 +568,73 @@ func TestGroupMonthsByYear(t *testing.T) {
 	}
 }
 
+func TestMarkdownToHTML_TableRendering(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name         string
+		markdown     string
+		wantContains []string
+	}{
+		{
+			name: "simple table renders correctly",
+			markdown: `| Header 1 | Header 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |`,
+			wantContains: []string{
+				"<table>",
+				"<thead>",
+				"<tbody>",
+				"<tr>",
+				"<th>Header 1</th>",
+				"<th>Header 2</th>",
+				"<td>Cell 1</td>",
+				"<td>Cell 2</td>",
+			},
+		},
+		{
+			name: "table with column alignment",
+			markdown: `| Left | Center | Right |
+|:-----|:------:|------:|
+| L    | C      | R     |`,
+			wantContains: []string{
+				"<table>",
+				`text-align:left`,
+				`text-align:center`,
+				`text-align:right`,
+			},
+		},
+		{
+			name: "inline formatting within table cells",
+			markdown: `| Format | Example |
+|--------|---------|
+| Bold | **strong** |
+| Link | [link](http://example.com) |
+| Code | ` + "`code`" + ` |`,
+			wantContains: []string{
+				"<table>",
+				"<strong>strong</strong>",
+				`<a href="http://example.com">link</a>`,
+				"<code>code</code>",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			html, err := parser.MarkdownToHTMLWithError(tt.markdown)
+			if err != nil {
+				t.Fatalf("MarkdownToHTMLWithError() error = %v", err)
+			}
+			for _, want := range tt.wantContains {
+				if !strings.Contains(html, want) {
+					t.Errorf("MarkdownToHTMLWithError() = %q, want to contain %q", html, want)
+				}
+			}
+		})
+	}
+}
+
 func TestMarkdownToHTML_HeadingIDs(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

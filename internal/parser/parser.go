@@ -12,6 +12,7 @@ import (
 	"github.com/jeroendee/ssg/internal/model"
 	"github.com/jeroendee/ssg/internal/wordcount"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
 	gmparser "github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/util"
@@ -27,6 +28,7 @@ type frontmatter struct {
 
 // md is the configured Goldmark instance with auto heading IDs and anchor links.
 var md = goldmark.New(
+	goldmark.WithExtensions(extension.Table),
 	goldmark.WithParserOptions(
 		gmparser.WithAutoHeadingID(),
 	),
