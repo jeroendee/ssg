@@ -12,6 +12,19 @@ type NavItem struct {
 	URL   string
 }
 
+// MonthGroup groups date anchors by year and month for archive navigation.
+type MonthGroup struct {
+	Year  int
+	Month string
+	Dates []string
+}
+
+// YearGroup groups months by year for hierarchical archive navigation.
+type YearGroup struct {
+	Year   int
+	Months []MonthGroup
+}
+
 // Analytics holds analytics configuration.
 type Analytics struct {
 	GoatCounter string
@@ -19,11 +32,13 @@ type Analytics struct {
 
 // Page represents a static page.
 type Page struct {
-	Title       string
-	Slug        string
-	Content     string
-	Path        string
-	DateAnchors []string // Date anchors for navigation (e.g., "2026-01-26")
+	Title             string
+	Slug              string
+	Content           string
+	Path              string
+	DateAnchors       []string    // Date anchors for navigation (e.g., "2026-01-26")
+	CurrentMonthDates []string    // Dates from the most recent month
+	ArchivedYears     []YearGroup // Previous months grouped by year for archive navigation
 }
 
 // Post represents a blog post with date and summary.

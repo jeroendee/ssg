@@ -92,12 +92,18 @@ func ParsePage(path string) (*model.Page, error) {
 		pagePath = "/"
 	}
 
+	dateAnchors := ExtractDateAnchors(body)
+	currentMonth, archivedMonths := GroupDatesByMonth(dateAnchors)
+	archivedYears := GroupMonthsByYear(archivedMonths)
+
 	return &model.Page{
-		Title:       fm.Title,
-		Slug:        slug,
-		Content:     html,
-		Path:        pagePath,
-		DateAnchors: ExtractDateAnchors(body),
+		Title:             fm.Title,
+		Slug:              slug,
+		Content:           html,
+		Path:              pagePath,
+		DateAnchors:       dateAnchors,
+		CurrentMonthDates: currentMonth,
+		ArchivedYears:     archivedYears,
 	}, nil
 }
 
@@ -115,6 +121,116 @@ func ExtractDateAnchors(markdown string) []string {
 		dates[i] = m[1]
 	}
 	return dates
+}
+
+// GroupDatesByMonth separates date anchors into current month and archived months.
+// Current month is the month containing the most recent valid date.
+// Archived months are returned newest-first. Malformed dates are excluded.
+func GroupDatesByMonth(dates []string) (currentMonth []string, archived []model.MonthGroup) {
+	if len(dates) == 0 {
+		return nil, nil
+	}
+
+	// Parse and group dates by year-month
+	type yearMonth struct {
+		year  int
+		month time.Month
+	}
+	groups := make(map[yearMonth][]string)
+	var validDates []yearMonth
+
+	for _, d := range dates {
+		t, err := time.Parse("2006-01-02", d)
+		if err != nil {
+			continue
+		}
+		ym := yearMonth{year: t.Year(), month: t.Month()}
+		if _, exists := groups[ym]; !exists {
+			validDates = append(validDates, ym)
+		}
+		groups[ym] = append(groups[ym], d)
+	}
+
+	if len(validDates) == 0 {
+		return nil, nil
+	}
+
+	// Find the most recent month (first valid date determines current month)
+	currentYM := validDates[0]
+	for _, ym := range validDates {
+		if ym.year > currentYM.year || (ym.year == currentYM.year && ym.month > currentYM.month) {
+			currentYM = ym
+		}
+	}
+
+	currentMonth = groups[currentYM]
+
+	// Collect archived months (all except current), sorted newest-first
+	var archiveYMs []yearMonth
+	for ym := range groups {
+		if ym != currentYM {
+			archiveYMs = append(archiveYMs, ym)
+		}
+	}
+
+	// Sort newest-first
+	for i := 0; i < len(archiveYMs)-1; i++ {
+		for j := i + 1; j < len(archiveYMs); j++ {
+			if archiveYMs[j].year > archiveYMs[i].year ||
+				(archiveYMs[j].year == archiveYMs[i].year && archiveYMs[j].month > archiveYMs[i].month) {
+				archiveYMs[i], archiveYMs[j] = archiveYMs[j], archiveYMs[i]
+			}
+		}
+	}
+
+	for _, ym := range archiveYMs {
+		archived = append(archived, model.MonthGroup{
+			Year:  ym.year,
+			Month: ym.month.String(),
+			Dates: groups[ym],
+		})
+	}
+
+	return currentMonth, archived
+}
+
+// GroupMonthsByYear groups archived months under year headers.
+// Years are ordered newest to oldest. Months within each year preserve their input order.
+func GroupMonthsByYear(months []model.MonthGroup) []model.YearGroup {
+	if len(months) == 0 {
+		return nil
+	}
+
+	// Group by year, preserving month order
+	yearMap := make(map[int][]model.MonthGroup)
+	var years []int
+
+	for _, m := range months {
+		if _, exists := yearMap[m.Year]; !exists {
+			years = append(years, m.Year)
+		}
+		yearMap[m.Year] = append(yearMap[m.Year], m)
+	}
+
+	// Sort years newest first
+	for i := 0; i < len(years)-1; i++ {
+		for j := i + 1; j < len(years); j++ {
+			if years[j] > years[i] {
+				years[i], years[j] = years[j], years[i]
+			}
+		}
+	}
+
+	// Build result
+	result := make([]model.YearGroup, len(years))
+	for i, y := range years {
+		result[i] = model.YearGroup{
+			Year:   y,
+			Months: yearMap[y],
+		}
+	}
+
+	return result
 }
 
 var assetRefRegex = regexp.MustCompile(`!\[.*?\]\((assets/[^)]+)\)`)
