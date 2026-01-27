@@ -333,7 +333,7 @@ The system SHALL render date navigation with current month and archived months s
 - **WHEN** rendering date navigation with current month dates
 - **THEN** the current month section SHALL appear on the left (desktop) or top (mobile)
 - **AND** the current month section SHALL use a details element with summary "Jump to date"
-- **AND** the details element SHALL be open by default
+- **AND** the details element SHALL be collapsed by default
 - **AND** each date SHALL be rendered as an anchor link with href matching the date
 
 #### Scenario: Archive section with previous months
