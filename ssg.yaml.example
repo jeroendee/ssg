@@ -14,6 +14,9 @@ site:
   # Author name (optional) - used for metadata
   author: Your Name
 
+  # Site description (optional) - used for metadata and RSS feed
+  # description: A blog about interesting things
+
   # Logo (optional) - path to site logo, displayed in header
   # logo: /logo.svg
 
@@ -50,6 +53,20 @@ navigation:
   - title: Blog
     url: /blog/
 
+# Analytics (optional)
+# analytics:
+#   # GoatCounter site code (https://www.goatcounter.com/)
+#   goatcounter: your-site-code
+
+# Feed configuration (optional)
+# Enables pages with date-anchored sections to appear in the RSS feed
+# alongside blog posts. Date sections are identified by headings in
+# italicized date format: # *2024-01-15* or ## *2024-01-15*
+# feed:
+#   pages:
+#     - /now/
+#     - /moments/
+
 # Directory structure expected:
 #
 # project/
@@ -57,7 +74,7 @@ navigation:
 # ├── assets/               # Optional: static files (images, custom style.css)
 # ├── content/              # Markdown content
 # │   ├── about.md          # Static page (becomes /about/)
-# │   ├── contact.md        # Static page (becomes /contact/)
+# │   ├── now.md            # Date-anchored page (becomes /now/)
 # │   └── blog/             # Blog posts directory
 # │       ├── 2024-01-15-first-post.md   # Blog post
 # │       └── 2024-02-20-second-post.md  # Blog post
@@ -73,3 +90,16 @@ navigation:
 #
 # Blog post filenames should be: YYYY-MM-DD-slug.md
 # The date is extracted from the filename.
+#
+# Date-anchored pages:
+# Pages can include date headings in italicized format to create
+# date-anchored sections with automatic navigation:
+#
+#   # *2024-01-15*
+#   Content for this date...
+#
+#   # *2024-01-10*
+#   Earlier content...
+#
+# These sections get anchor links and a date navigation dropdown.
+# Add the page path to feed.pages to include entries in the RSS feed.
