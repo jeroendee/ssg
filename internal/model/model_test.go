@@ -189,3 +189,71 @@ func TestSite_FaviconMIMEType(t *testing.T) {
 		})
 	}
 }
+
+func TestPostFeedAdapter_ImplementsFeedItem(t *testing.T) {
+	t.Parallel()
+
+	post := &model.Post{
+		Page: model.Page{
+			Title:   "Test Post",
+			Slug:    "test-post",
+			Content: "<p>Hello world</p>",
+		},
+		Date: time.Date(2026, 1, 27, 0, 0, 0, 0, time.UTC),
+	}
+	adapter := model.PostFeedAdapter{
+		Post:    post,
+		BaseURL: "https://example.com",
+	}
+
+	// Verify it implements FeedItem
+	var _ model.FeedItem = adapter
+
+	if got := adapter.FeedTitle(); got != "Test Post" {
+		t.Errorf("FeedTitle() = %q, want %q", got, "Test Post")
+	}
+	if got := adapter.FeedLink(); got != "https://example.com/blog/test-post/" {
+		t.Errorf("FeedLink() = %q, want %q", got, "https://example.com/blog/test-post/")
+	}
+	if got := adapter.FeedContent(); got != "<p>Hello world</p>" {
+		t.Errorf("FeedContent() = %q, want %q", got, "<p>Hello world</p>")
+	}
+	if got := adapter.FeedDate(); !got.Equal(post.Date) {
+		t.Errorf("FeedDate() = %v, want %v", got, post.Date)
+	}
+	if got := adapter.FeedGUID(); got != "https://example.com/blog/test-post/" {
+		t.Errorf("FeedGUID() = %q, want %q", got, "https://example.com/blog/test-post/")
+	}
+}
+
+func TestDateSection_ImplementsFeedItem(t *testing.T) {
+	t.Parallel()
+
+	section := model.DateSection{
+		PageTitle: "Moments",
+		PagePath:  "/moments/",
+		Date:      time.Date(2026, 1, 27, 0, 0, 0, 0, time.UTC),
+		Anchor:    "2026-01-27",
+		Content:   "<p>Today's content</p>",
+		BaseURL:   "https://example.com",
+	}
+
+	// Verify it implements FeedItem
+	var _ model.FeedItem = section
+
+	if got := section.FeedTitle(); got != "Moments - January 27, 2026" {
+		t.Errorf("FeedTitle() = %q, want %q", got, "Moments - January 27, 2026")
+	}
+	if got := section.FeedLink(); got != "https://example.com/moments/#2026-01-27" {
+		t.Errorf("FeedLink() = %q, want %q", got, "https://example.com/moments/#2026-01-27")
+	}
+	if got := section.FeedContent(); got != "<p>Today's content</p>" {
+		t.Errorf("FeedContent() = %q, want %q", got, "<p>Today's content</p>")
+	}
+	if got := section.FeedDate(); !got.Equal(section.Date) {
+		t.Errorf("FeedDate() = %v, want %v", got, section.Date)
+	}
+	if got := section.FeedGUID(); got != "https://example.com/moments/#2026-01-27" {
+		t.Errorf("FeedGUID() = %q, want %q", got, "https://example.com/moments/#2026-01-27")
+	}
+}

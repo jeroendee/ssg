@@ -3,6 +3,7 @@ package builder
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1620,6 +1621,265 @@ Here is an image:
 	// Should NOT contain: src="assets/test-image.png"
 	if strings.Contains(string(htmlContent), `src="assets/test-image.png"`) {
 		t.Errorf("HTML should NOT contain assets/ prefix, got:\n%s", htmlContent)
+	}
+}
+
+func TestCollectFeedItems_PostsOnly(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
+
+	// Create blog posts
+	blogDir := filepath.Join(contentDir, "blog")
+	os.MkdirAll(blogDir, 0755)
+	writeFile(t, filepath.Join(blogDir, "2026-01-27-post1.md"), "---\ntitle: Post 1\n---\nContent 1")
+	writeFile(t, filepath.Join(blogDir, "2026-01-26-post2.md"), "---\ntitle: Post 2\n---\nContent 2")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		FeedPages:  []string{}, // No feed pages configured
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	items := b.collectFeedItems(*site)
+	if len(items) != 2 {
+		t.Errorf("collectFeedItems() returned %d items, want 2", len(items))
+	}
+
+	// Verify sorted by date (newest first)
+	if items[0].FeedTitle() != "Post 1" {
+		t.Errorf("First item title = %q, want %q", items[0].FeedTitle(), "Post 1")
+	}
+}
+
+func TestCollectFeedItems_WithFeedPages(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
+
+	// Create a feed page with date sections using markdown headers that generate IDs
+	// The parser uses the date format YYYY-MM-DD as heading IDs
+	feedPageContent := `---
+title: Moments
+---
+# My Moments
+
+## 2026-01-28
+
+Today's moment.
+
+## 2026-01-25
+
+Earlier moment.
+`
+	writeFile(t, filepath.Join(contentDir, "moments.md"), feedPageContent)
+
+	// Create blog posts
+	blogDir := filepath.Join(contentDir, "blog")
+	os.MkdirAll(blogDir, 0755)
+	writeFile(t, filepath.Join(blogDir, "2026-01-27-post.md"), "---\ntitle: Blog Post\n---\nPost content")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		FeedPages:  []string{"/moments/"},
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	items := b.collectFeedItems(*site)
+	if len(items) != 3 {
+		t.Errorf("collectFeedItems() returned %d items, want 3 (1 post + 2 date sections)", len(items))
+		return
+	}
+
+	// Verify sorted by date (newest first): 2026-01-28, 2026-01-27, 2026-01-25
+	if !strings.Contains(items[0].FeedTitle(), "January 28, 2026") {
+		t.Errorf("First item title = %q, expected date section from Jan 28", items[0].FeedTitle())
+	}
+	if items[1].FeedTitle() != "Blog Post" {
+		t.Errorf("Second item title = %q, want %q", items[1].FeedTitle(), "Blog Post")
+	}
+}
+
+func TestCollectFeedItems_NonExistentFeedPage(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		FeedPages:  []string{"/nonexistent/"},
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	// Should not panic, just skip the missing page
+	items := b.collectFeedItems(*site)
+	if len(items) != 0 {
+		t.Errorf("collectFeedItems() returned %d items, want 0 (no posts, missing feed page)", len(items))
+	}
+}
+
+func TestCollectFeedItems_LimitsTo20(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	writeHomeMd(t, contentDir)
+
+	// Create 25 blog posts
+	blogDir := filepath.Join(contentDir, "blog")
+	os.MkdirAll(blogDir, 0755)
+	for i := 1; i <= 25; i++ {
+		filename := fmt.Sprintf("2026-01-%02d-post%d.md", i, i)
+		content := fmt.Sprintf("---\ntitle: Post %d\n---\nContent", i)
+		writeFile(t, filepath.Join(blogDir, filename), content)
+	}
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		FeedPages:  []string{},
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	items := b.collectFeedItems(*site)
+	if len(items) != 20 {
+		t.Errorf("collectFeedItems() returned %d items, want 20 (limit)", len(items))
+	}
+}
+
+func TestFindPageByPath(t *testing.T) {
+	t.Parallel()
+
+	pages := []Page{
+		{Title: "About", Slug: "about", Path: "/about/"},
+		{Title: "Now", Slug: "now", Path: "/now/"},
+		{Title: "Home", Slug: "", Path: "/"},
+	}
+
+	tests := []struct {
+		path     string
+		wantName string
+		wantNil  bool
+	}{
+		{"/now/", "Now", false},
+		{"now/", "Now", false}, // Missing leading slash
+		{"/now", "Now", false}, // Missing trailing slash
+		{"/about/", "About", false},
+		{"/missing/", "", true},
+		{"/", "Home", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			t.Parallel()
+			got := findPageByPath(pages, tt.path)
+			if tt.wantNil {
+				if got != nil {
+					t.Errorf("findPageByPath(%q) = %v, want nil", tt.path, got)
+				}
+				return
+			}
+			if got == nil {
+				t.Errorf("findPageByPath(%q) = nil, want page with title %q", tt.path, tt.wantName)
+				return
+			}
+			if got.Title != tt.wantName {
+				t.Errorf("findPageByPath(%q) = %q, want %q", tt.path, got.Title, tt.wantName)
+			}
+		})
+	}
+}
+
+func TestBuild_FeedIncludesPages(t *testing.T) {
+	t.Parallel()
+
+	contentDir := t.TempDir()
+	outputDir := t.TempDir()
+
+	writeHomeMd(t, contentDir)
+
+	// Create a feed page with date sections
+	feedPageContent := `---
+title: Moments
+---
+# My Moments
+
+## 2026-01-28
+
+Today's moment.
+`
+	writeFile(t, filepath.Join(contentDir, "moments.md"), feedPageContent)
+
+	// Create blog post
+	blogDir := filepath.Join(contentDir, "blog")
+	os.MkdirAll(blogDir, 0755)
+	writeFile(t, filepath.Join(blogDir, "2026-01-27-post.md"), "---\ntitle: Blog Post\n---\nPost content")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: contentDir,
+		OutputDir:  outputDir,
+		FeedPages:  []string{"/moments/"},
+	}
+
+	b := New(cfg)
+	err := b.Build()
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+
+	// Read feed.xml
+	feedPath := filepath.Join(outputDir, "feed.xml")
+	content, err := os.ReadFile(feedPath)
+	if err != nil {
+		t.Fatalf("failed to read feed.xml: %v", err)
+	}
+
+	feedStr := string(content)
+
+	// Check blog post is in feed
+	if !strings.Contains(feedStr, "<title>Blog Post</title>") {
+		t.Error("feed.xml missing blog post")
+	}
+
+	// Check page date section is in feed
+	if !strings.Contains(feedStr, "Moments - January 28, 2026") {
+		t.Error("feed.xml missing page date section")
+	}
+
+	// Check link format for page section
+	if !strings.Contains(feedStr, "https://example.com/moments/#2026-01-28") {
+		t.Error("feed.xml missing page date section link with anchor")
 	}
 }
 

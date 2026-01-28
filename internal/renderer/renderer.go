@@ -258,26 +258,26 @@ type rssFeed struct {
 	Channel rssChannel `xml:"channel"`
 }
 
-// RenderFeed renders an RSS 2.0 feed for blog posts.
-func (r *Renderer) RenderFeed(site model.Site, posts []model.Post) (string, error) {
-	if len(posts) == 0 {
+// RenderFeed renders an RSS 2.0 feed from FeedItems.
+func (r *Renderer) RenderFeed(site model.Site, items []model.FeedItem) (string, error) {
+	if len(items) == 0 {
 		return "", nil
 	}
 
-	// Limit to 20 posts
-	feedPosts := posts
-	if len(feedPosts) > 20 {
-		feedPosts = feedPosts[:20]
+	// Limit to 20 items
+	feedItems := items
+	if len(feedItems) > 20 {
+		feedItems = feedItems[:20]
 	}
 
-	// Build items
-	items := make([]rssItem, len(feedPosts))
-	for i, p := range feedPosts {
-		items[i] = rssItem{
-			Title:       p.Title,
-			Link:        site.BaseURL + "/blog/" + p.Slug + "/",
-			Description: rssCDATA{Content: p.Content},
-			PubDate:     p.Date.Format(time.RFC1123Z),
+	// Build RSS items
+	rssItems := make([]rssItem, len(feedItems))
+	for i, item := range feedItems {
+		rssItems[i] = rssItem{
+			Title:       item.FeedTitle(),
+			Link:        item.FeedLink(),
+			Description: rssCDATA{Content: item.FeedContent()},
+			PubDate:     item.FeedDate().Format(time.RFC1123Z),
 		}
 	}
 
@@ -288,7 +288,7 @@ func (r *Renderer) RenderFeed(site model.Site, posts []model.Post) (string, erro
 			Link:          site.BaseURL,
 			Description:   site.Description,
 			LastBuildDate: time.Now().UTC().Format(time.RFC1123Z),
-			Items:         items,
+			Items:         rssItems,
 		},
 	}
 

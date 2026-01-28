@@ -12,6 +12,15 @@ type NavItem struct {
 	URL   string
 }
 
+// FeedItem is the interface for items that can appear in the RSS feed.
+type FeedItem interface {
+	FeedTitle() string
+	FeedLink() string
+	FeedContent() string
+	FeedDate() time.Time
+	FeedGUID() string
+}
+
 // MonthGroup groups date anchors by year and month for archive navigation.
 type MonthGroup struct {
 	Year  int
@@ -79,6 +88,7 @@ type Config struct {
 	AssetsDir   string
 	Navigation  []NavItem
 	Analytics   Analytics
+	FeedPages   []string
 }
 
 // FaviconMIMEType returns the MIME type for the favicon based on file extension.
@@ -94,4 +104,70 @@ func (s Site) FaviconMIMEType() string {
 	default:
 		return "image/x-icon"
 	}
+}
+
+// PostFeedAdapter wraps a Post to implement FeedItem with site context.
+type PostFeedAdapter struct {
+	Post    *Post
+	BaseURL string
+}
+
+// FeedTitle returns the post title.
+func (p PostFeedAdapter) FeedTitle() string {
+	return p.Post.Title
+}
+
+// FeedLink returns the absolute URL to the post.
+func (p PostFeedAdapter) FeedLink() string {
+	return p.BaseURL + "/blog/" + p.Post.Slug + "/"
+}
+
+// FeedContent returns the post's HTML content.
+func (p PostFeedAdapter) FeedContent() string {
+	return p.Post.Content
+}
+
+// FeedDate returns the post's publication date.
+func (p PostFeedAdapter) FeedDate() time.Time {
+	return p.Post.Date
+}
+
+// FeedGUID returns the unique identifier (same as link for posts).
+func (p PostFeedAdapter) FeedGUID() string {
+	return p.FeedLink()
+}
+
+// DateSection represents a date-anchored section from a page for the RSS feed.
+type DateSection struct {
+	PageTitle string
+	PagePath  string
+	Date      time.Time
+	Anchor    string
+	Content   string
+	BaseURL   string
+}
+
+// FeedTitle returns the title in format "{PageTitle} - {Month} {Day}, {Year}".
+func (d DateSection) FeedTitle() string {
+	return d.PageTitle + " - " + d.Date.Format("January 2, 2006")
+}
+
+// FeedLink returns the absolute URL to the page with the date anchor.
+func (d DateSection) FeedLink() string {
+	return d.BaseURL + d.PagePath + "#" + d.Anchor
+}
+
+// FeedContent returns the section's HTML content.
+func (d DateSection) FeedContent() string {
+	return d.Content
+}
+
+// FeedDate returns the date of this section.
+func (d DateSection) FeedDate() time.Time {
+	return d.Date
+}
+
+// FeedGUID returns the unique identifier (same as link).
+func (d DateSection) FeedGUID() string {
+	return d.FeedLink()
 }

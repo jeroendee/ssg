@@ -609,7 +609,7 @@ func TestRenderBase_WithoutFavicon(t *testing.T) {
 	}
 }
 
-func TestRenderFeed_EmptyPosts(t *testing.T) {
+func TestRenderFeed_EmptyItems(t *testing.T) {
 	t.Parallel()
 
 	r, err := New()
@@ -629,8 +629,22 @@ func TestRenderFeed_EmptyPosts(t *testing.T) {
 	}
 
 	if got != "" {
-		t.Errorf("RenderFeed() with no posts = %q, want empty string", got)
+		t.Errorf("RenderFeed() with no items = %q, want empty string", got)
 	}
+}
+
+// postToFeedItem converts a Post to a FeedItem for testing.
+func postToFeedItem(post model.Post, baseURL string) model.FeedItem {
+	return model.PostFeedAdapter{Post: &post, BaseURL: baseURL}
+}
+
+// postsToFeedItems converts a slice of Posts to FeedItems for testing.
+func postsToFeedItems(posts []model.Post, baseURL string) []model.FeedItem {
+	items := make([]model.FeedItem, len(posts))
+	for i := range posts {
+		items[i] = model.PostFeedAdapter{Post: &posts[i], BaseURL: baseURL}
+	}
+	return items
 }
 
 func TestRenderFeed_ValidRSSStructure(t *testing.T) {
@@ -657,7 +671,7 @@ func TestRenderFeed_ValidRSSStructure(t *testing.T) {
 		},
 	}
 
-	got, err := r.RenderFeed(site, posts)
+	got, err := r.RenderFeed(site, postsToFeedItems(posts, site.BaseURL))
 	if err != nil {
 		t.Fatalf("RenderFeed() error = %v", err)
 	}
@@ -711,7 +725,7 @@ func TestRenderFeed_AbsoluteURLs(t *testing.T) {
 		},
 	}
 
-	got, err := r.RenderFeed(site, posts)
+	got, err := r.RenderFeed(site, postsToFeedItems(posts, site.BaseURL))
 	if err != nil {
 		t.Fatalf("RenderFeed() error = %v", err)
 	}
@@ -746,7 +760,7 @@ func TestRenderFeed_RFC822DateFormat(t *testing.T) {
 		},
 	}
 
-	got, err := r.RenderFeed(site, posts)
+	got, err := r.RenderFeed(site, postsToFeedItems(posts, site.BaseURL))
 	if err != nil {
 		t.Fatalf("RenderFeed() error = %v", err)
 	}
@@ -781,7 +795,7 @@ func TestRenderFeed_CDATAContent(t *testing.T) {
 		},
 	}
 
-	got, err := r.RenderFeed(site, posts)
+	got, err := r.RenderFeed(site, postsToFeedItems(posts, site.BaseURL))
 	if err != nil {
 		t.Fatalf("RenderFeed() error = %v", err)
 	}
@@ -792,7 +806,7 @@ func TestRenderFeed_CDATAContent(t *testing.T) {
 	}
 }
 
-func TestRenderFeed_Max20Posts(t *testing.T) {
+func TestRenderFeed_Max20Items(t *testing.T) {
 	t.Parallel()
 
 	r, err := New()
@@ -819,7 +833,7 @@ func TestRenderFeed_Max20Posts(t *testing.T) {
 		}
 	}
 
-	got, err := r.RenderFeed(site, posts)
+	got, err := r.RenderFeed(site, postsToFeedItems(posts, site.BaseURL))
 	if err != nil {
 		t.Fatalf("RenderFeed() error = %v", err)
 	}
@@ -828,6 +842,113 @@ func TestRenderFeed_Max20Posts(t *testing.T) {
 	itemCount := strings.Count(got, "<item>")
 	if itemCount != 20 {
 		t.Errorf("RenderFeed() should limit to 20 items, got %d", itemCount)
+	}
+}
+
+func TestRenderFeed_MixedItems(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "A test site",
+		BaseURL:     "https://example.com",
+	}
+
+	// Create mixed feed items: 1 post and 1 page section
+	post := model.Post{
+		Page: model.Page{
+			Title:   "Blog Post",
+			Slug:    "blog-post",
+			Content: "<p>Post content</p>",
+		},
+		Date: time.Date(2026, 1, 27, 0, 0, 0, 0, time.UTC),
+	}
+	dateSection := model.DateSection{
+		PageTitle: "Moments",
+		PagePath:  "/moments/",
+		Date:      time.Date(2026, 1, 26, 0, 0, 0, 0, time.UTC),
+		Anchor:    "2026-01-26",
+		Content:   "<p>Section content</p>",
+		BaseURL:   "https://example.com",
+	}
+
+	items := []model.FeedItem{
+		model.PostFeedAdapter{Post: &post, BaseURL: site.BaseURL},
+		dateSection,
+	}
+
+	got, err := r.RenderFeed(site, items)
+	if err != nil {
+		t.Fatalf("RenderFeed() error = %v", err)
+	}
+
+	// Check post entry
+	if !strings.Contains(got, "<title>Blog Post</title>") {
+		t.Error("RenderFeed() missing post title")
+	}
+	if !strings.Contains(got, "<link>https://example.com/blog/blog-post/</link>") {
+		t.Error("RenderFeed() missing post link")
+	}
+
+	// Check date section entry
+	if !strings.Contains(got, "<title>Moments - January 26, 2026</title>") {
+		t.Error("RenderFeed() missing date section title")
+	}
+	if !strings.Contains(got, "<link>https://example.com/moments/#2026-01-26</link>") {
+		t.Error("RenderFeed() missing date section link")
+	}
+
+	// Check both items present
+	itemCount := strings.Count(got, "<item>")
+	if itemCount != 2 {
+		t.Errorf("RenderFeed() should have 2 items, got %d", itemCount)
+	}
+}
+
+func TestRenderFeed_DateSectionOnly(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:       "Test Site",
+		Description: "A test site",
+		BaseURL:     "https://example.com",
+	}
+
+	dateSection := model.DateSection{
+		PageTitle: "Now",
+		PagePath:  "/now/",
+		Date:      time.Date(2026, 1, 27, 0, 0, 0, 0, time.UTC),
+		Anchor:    "2026-01-27",
+		Content:   "<p>What I'm doing now</p>",
+		BaseURL:   "https://example.com",
+	}
+
+	items := []model.FeedItem{dateSection}
+
+	got, err := r.RenderFeed(site, items)
+	if err != nil {
+		t.Fatalf("RenderFeed() error = %v", err)
+	}
+
+	// Check date section entry
+	if !strings.Contains(got, "<title>Now - January 27, 2026</title>") {
+		t.Error("RenderFeed() missing date section title")
+	}
+	if !strings.Contains(got, "<link>https://example.com/now/#2026-01-27</link>") {
+		t.Error("RenderFeed() missing date section link")
+	}
+	if !strings.Contains(got, "<![CDATA[<p>What I'm doing now</p>]]>") {
+		t.Error("RenderFeed() missing date section content")
 	}
 }
 

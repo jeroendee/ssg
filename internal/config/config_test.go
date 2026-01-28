@@ -389,6 +389,84 @@ func TestLoad_WithoutGoatCounter(t *testing.T) {
 	}
 }
 
+func TestLoad_FeedPagesSpecified(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+feed:
+  pages:
+    - /now/
+    - /moments/
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	want := []string{"/now/", "/moments/"}
+	if len(cfg.FeedPages) != len(want) {
+		t.Fatalf("FeedPages = %v, want %v", cfg.FeedPages, want)
+	}
+	for i, p := range want {
+		if cfg.FeedPages[i] != p {
+			t.Errorf("FeedPages[%d] = %q, want %q", i, cfg.FeedPages[i], p)
+		}
+	}
+}
+
+func TestLoad_FeedPagesEmpty(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+feed:
+  pages: []
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if len(cfg.FeedPages) != 0 {
+		t.Errorf("FeedPages = %v, want empty slice", cfg.FeedPages)
+	}
+}
+
+func TestLoad_FeedPagesOmitted(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.FeedPages == nil {
+		t.Error("FeedPages should be initialized to empty slice, not nil")
+	}
+	if len(cfg.FeedPages) != 0 {
+		t.Errorf("FeedPages = %v, want empty slice", cfg.FeedPages)
+	}
+}
+
 func TestLoad_WithOGImage(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()

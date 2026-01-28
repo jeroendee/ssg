@@ -635,6 +635,143 @@ func TestMarkdownToHTML_TableRendering(t *testing.T) {
 	}
 }
 
+func TestExtractFeedDateSections(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name          string
+		html          string
+		wantSections  int
+		wantFirstDate string
+		wantFirstText string
+	}{
+		{
+			name: "single date section",
+			html: `<h2 id="2026-01-27"><a href="#2026-01-27">January 27, 2026</a></h2>
+<p>Today's content here.</p>`,
+			wantSections:  1,
+			wantFirstDate: "2026-01-27",
+			wantFirstText: "<p>Today's content here.</p>",
+		},
+		{
+			name: "multiple date sections",
+			html: `<h2 id="2026-01-27"><a href="#2026-01-27">January 27, 2026</a></h2>
+<p>First content.</p>
+<h2 id="2026-01-26"><a href="#2026-01-26">January 26, 2026</a></h2>
+<p>Second content.</p>`,
+			wantSections:  2,
+			wantFirstDate: "2026-01-27",
+			wantFirstText: "<p>First content.</p>",
+		},
+		{
+			name: "no date sections",
+			html: `<h2 id="about"><a href="#about">About</a></h2>
+<p>Regular content.</p>`,
+			wantSections: 0,
+		},
+		{
+			name:         "empty html",
+			html:         "",
+			wantSections: 0,
+		},
+		{
+			name: "date sections at different heading levels",
+			html: `<h3 id="2026-01-27"><a href="#2026-01-27">January 27, 2026</a></h3>
+<p>H3 section content.</p>
+<h4 id="2026-01-26"><a href="#2026-01-26">January 26, 2026</a></h4>
+<p>H4 section content.</p>`,
+			wantSections:  2,
+			wantFirstDate: "2026-01-27",
+			wantFirstText: "<p>H3 section content.</p>",
+		},
+		{
+			name: "content between non-date and date headers",
+			html: `<h1 id="intro"><a href="#intro">Intro</a></h1>
+<p>Introduction text.</p>
+<h2 id="2026-01-27"><a href="#2026-01-27">January 27, 2026</a></h2>
+<p>Date section content.</p>`,
+			wantSections:  1,
+			wantFirstDate: "2026-01-27",
+			wantFirstText: "<p>Date section content.</p>",
+		},
+		{
+			name: "date section with complex content",
+			html: `<h2 id="2026-01-27"><a href="#2026-01-27">January 27, 2026</a></h2>
+<p>Paragraph one.</p>
+<ul><li>List item</li></ul>
+<p>Paragraph two.</p>`,
+			wantSections:  1,
+			wantFirstDate: "2026-01-27",
+			wantFirstText: "<p>Paragraph one.</p>\n<ul><li>List item</li></ul>\n<p>Paragraph two.</p>",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			sections := parser.ExtractFeedDateSections(tt.html)
+			if len(sections) != tt.wantSections {
+				t.Errorf("ExtractFeedDateSections() returned %d sections, want %d", len(sections), tt.wantSections)
+				return
+			}
+			if tt.wantSections > 0 {
+				if sections[0].Anchor != tt.wantFirstDate {
+					t.Errorf("First section anchor = %q, want %q", sections[0].Anchor, tt.wantFirstDate)
+				}
+				if strings.TrimSpace(sections[0].Content) != strings.TrimSpace(tt.wantFirstText) {
+					t.Errorf("First section content = %q, want %q", strings.TrimSpace(sections[0].Content), strings.TrimSpace(tt.wantFirstText))
+				}
+			}
+		})
+	}
+}
+
+func TestParseDateFromAnchor(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		anchor  string
+		wantErr bool
+		wantDay int
+	}{
+		{
+			name:    "valid date anchor",
+			anchor:  "2026-01-27",
+			wantErr: false,
+			wantDay: 27,
+		},
+		{
+			name:    "invalid date anchor",
+			anchor:  "not-a-date",
+			wantErr: true,
+		},
+		{
+			name:    "empty anchor",
+			anchor:  "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			date, err := parser.ParseDateFromAnchor(tt.anchor)
+			if tt.wantErr {
+				if err == nil {
+					t.Error("ParseDateFromAnchor() expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("ParseDateFromAnchor() unexpected error = %v", err)
+				return
+			}
+			if date.Day() != tt.wantDay {
+				t.Errorf("ParseDateFromAnchor() day = %d, want %d", date.Day(), tt.wantDay)
+			}
+		})
+	}
+}
+
 func TestMarkdownToHTML_HeadingIDs(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

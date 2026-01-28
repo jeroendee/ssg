@@ -31,6 +31,9 @@ type yamlConfig struct {
 	Analytics struct {
 		GoatCounter string `yaml:"goatcounter"`
 	} `yaml:"analytics"`
+	Feed struct {
+		Pages []string `yaml:"pages"`
+	} `yaml:"feed"`
 }
 
 // Options provides CLI flag overrides for configuration.
@@ -64,6 +67,12 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 		return nil, errors.New("config: missing required field 'site.baseURL'")
 	}
 
+	// Initialize FeedPages to empty slice if nil
+	feedPages := yc.Feed.Pages
+	if feedPages == nil {
+		feedPages = []string{}
+	}
+
 	cfg := &model.Config{
 		Title:       yc.Site.Title,
 		Description: yc.Site.Description,
@@ -78,6 +87,7 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 		Analytics: model.Analytics{
 			GoatCounter: yc.Analytics.GoatCounter,
 		},
+		FeedPages: feedPages,
 	}
 
 	// Apply defaults

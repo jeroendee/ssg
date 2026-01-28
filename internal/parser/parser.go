@@ -237,6 +237,69 @@ func GroupMonthsByYear(months []model.MonthGroup) []model.YearGroup {
 
 var assetRefRegex = regexp.MustCompile(`!\[.*?\]\((assets/[^)]+)\)`)
 
+// dateHeaderRegex matches HTML headings with date anchor IDs (YYYY-MM-DD format).
+// Handles headings like: <h2 id="2026-01-27"><a href="#2026-01-27">January 27, 2026</a></h2>
+var dateHeaderRegex = regexp.MustCompile(`<h[1-6] id="(\d{4}-\d{2}-\d{2})">.*?</h[1-6]>`)
+
+// FeedDateSection represents a date-anchored section extracted from HTML for feed generation.
+type FeedDateSection struct {
+	Anchor  string
+	Content string
+}
+
+// ExtractFeedDateSections finds date-anchored sections in HTML content.
+// Returns sections with their date anchors and the content between that header and the next.
+func ExtractFeedDateSections(html string) []FeedDateSection {
+	// Find all date headers
+	matches := dateHeaderRegex.FindAllStringSubmatchIndex(html, -1)
+	if matches == nil {
+		return []FeedDateSection{}
+	}
+
+	sections := make([]FeedDateSection, 0, len(matches))
+
+	for i, match := range matches {
+		// match[0]:match[1] is the full header match
+		// match[2]:match[3] is the date anchor capture group
+		anchor := html[match[2]:match[3]]
+
+		// Content starts after this header
+		contentStart := match[1]
+
+		// Content ends at the next heading (any level) or end of document
+		var contentEnd int
+		if i+1 < len(matches) {
+			// Find the start of the next date header
+			contentEnd = matches[i+1][0]
+		} else {
+			contentEnd = len(html)
+		}
+
+		// Extract and trim content
+		content := strings.TrimSpace(html[contentStart:contentEnd])
+
+		// Skip if there's no content
+		if content == "" {
+			continue
+		}
+
+		sections = append(sections, FeedDateSection{
+			Anchor:  anchor,
+			Content: content,
+		})
+	}
+
+	return sections
+}
+
+// ParseDateFromAnchor parses a date string in YYYY-MM-DD format to time.Time.
+func ParseDateFromAnchor(anchor string) (time.Time, error) {
+	if anchor == "" {
+		return time.Time{}, fmt.Errorf("empty anchor")
+	}
+	return time.Parse("2006-01-02", anchor)
+}
+
 // ExtractAssetReferences finds all asset references in markdown content.
 func ExtractAssetReferences(markdown string) []string {
 	matches := assetRefRegex.FindAllStringSubmatch(markdown, -1)

@@ -18,6 +18,9 @@ import (
 	"github.com/jeroendee/ssg/internal/renderer"
 )
 
+// Page is an alias for model.Page for internal use.
+type Page = model.Page
+
 // Builder orchestrates site building from content files.
 type Builder struct {
 	cfg       *model.Config
@@ -366,19 +369,93 @@ func (b *Builder) writeBlogListing(r *renderer.Renderer, site model.Site) error 
 	return os.WriteFile(filepath.Join(dir, "index.html"), []byte(html), 0644)
 }
 
-// writeFeed writes the RSS feed.
+// writeFeed writes the RSS feed with posts and configured feed pages.
 func (b *Builder) writeFeed(r *renderer.Renderer, site model.Site) error {
-	xml, err := r.RenderFeed(site, site.Posts)
+	feedItems := b.collectFeedItems(site)
+	if len(feedItems) == 0 {
+		return nil
+	}
+
+	xml, err := r.RenderFeed(site, feedItems)
 	if err != nil {
 		return err
 	}
 
-	// Skip if no posts (RenderFeed returns empty string)
+	// Skip if no items (RenderFeed returns empty string)
 	if xml == "" {
 		return nil
 	}
 
 	return os.WriteFile(filepath.Join(b.cfg.OutputDir, "feed.xml"), []byte(xml), 0644)
+}
+
+// collectFeedItems gathers all feed items from posts and configured feed pages.
+func (b *Builder) collectFeedItems(site model.Site) []model.FeedItem {
+	var items []model.FeedItem
+
+	// Add posts as FeedItems
+	for i := range site.Posts {
+		items = append(items, model.PostFeedAdapter{
+			Post:    &site.Posts[i],
+			BaseURL: site.BaseURL,
+		})
+	}
+
+	// Add date sections from configured feed pages
+	for _, pagePath := range b.cfg.FeedPages {
+		page := findPageByPath(site.Pages, pagePath)
+		if page == nil {
+			continue
+		}
+
+		sections := parser.ExtractFeedDateSections(page.Content)
+		for _, section := range sections {
+			date, err := parser.ParseDateFromAnchor(section.Anchor)
+			if err != nil {
+				continue
+			}
+
+			items = append(items, model.DateSection{
+				PageTitle: page.Title,
+				PagePath:  page.Path,
+				Date:      date,
+				Anchor:    section.Anchor,
+				Content:   section.Content,
+				BaseURL:   site.BaseURL,
+			})
+		}
+	}
+
+	// Sort by date descending (newest first)
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].FeedDate().After(items[j].FeedDate())
+	})
+
+	// Limit to 20 items
+	if len(items) > 20 {
+		items = items[:20]
+	}
+
+	return items
+}
+
+// findPageByPath finds a page by its path (e.g., "/now/", "/moments/").
+func findPageByPath(pages []Page, pagePath string) *Page {
+	// Normalize path to match page.Path format
+	normalizedPath := pagePath
+	if !strings.HasSuffix(normalizedPath, "/") {
+		normalizedPath += "/"
+	}
+	if !strings.HasPrefix(normalizedPath, "/") {
+		normalizedPath = "/" + normalizedPath
+	}
+
+	for i := range pages {
+		if pages[i].Path == normalizedPath {
+			return &pages[i]
+		}
+	}
+	return nil
 }
 
 // write404 writes the 404 error page.
