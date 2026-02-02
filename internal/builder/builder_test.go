@@ -1883,6 +1883,92 @@ Today's moment.
 	}
 }
 
+func TestScanContent_FooterFileExists(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeHomeMd(t, dir)
+	writeFile(t, filepath.Join(dir, "_footer.md"), "Contact: [email](mailto:test@example.com)")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: dir,
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	if site.FooterContent == "" {
+		t.Error("ScanContent() FooterContent should not be empty when _footer.md exists")
+	}
+
+	// Verify markdown was converted to HTML
+	if !strings.Contains(site.FooterContent, "<a href=") {
+		t.Errorf("ScanContent() FooterContent should contain HTML link, got: %s", site.FooterContent)
+	}
+}
+
+func TestScanContent_FooterFileNotExists(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeHomeMd(t, dir)
+	// No _footer.md created
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: dir,
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	if site.FooterContent != "" {
+		t.Errorf("ScanContent() FooterContent should be empty when _footer.md doesn't exist, got: %s", site.FooterContent)
+	}
+}
+
+func TestScanContent_FooterExcludedFromPages(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeHomeMd(t, dir)
+	writeFile(t, filepath.Join(dir, "_footer.md"), "Footer content")
+	writeFile(t, filepath.Join(dir, "about.md"), "---\ntitle: About\n---\nAbout")
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: dir,
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	// Should have 2 pages (home + about), not 3
+	if len(site.Pages) != 2 {
+		t.Errorf("ScanContent() pages = %d, want 2 (footer should be excluded)", len(site.Pages))
+	}
+
+	// Verify footer is not in pages
+	for _, page := range site.Pages {
+		if page.Slug == "_footer" || strings.Contains(page.Title, "footer") {
+			t.Errorf("ScanContent() _footer.md should not be in pages, found: %s", page.Slug)
+		}
+	}
+}
+
 func TestBuild_GeneratesBuildTimestamp(t *testing.T) {
 	t.Parallel()
 

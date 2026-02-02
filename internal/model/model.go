@@ -61,17 +61,18 @@ type Post struct {
 
 // Site represents the complete site with all pages and posts.
 type Site struct {
-	Title       string
-	Description string
-	BaseURL     string
-	Author      string
-	Logo        string
-	OGImage     string
-	Favicon     string
-	Navigation  []NavItem
-	Pages       []Page
-	Posts       []Post
-	Analytics   Analytics
+	Title         string
+	Description   string
+	BaseURL       string
+	Author        string
+	Logo          string
+	OGImage       string
+	Favicon       string
+	Navigation    []NavItem
+	Pages         []Page
+	Posts         []Post
+	Analytics     Analytics
+	FooterContent string
 }
 
 // Config holds site configuration loaded from ssg.yaml.

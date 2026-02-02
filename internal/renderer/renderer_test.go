@@ -952,6 +952,75 @@ func TestRenderFeed_DateSectionOnly(t *testing.T) {
 	}
 }
 
+func TestRenderPage_FooterContentNotEscaped(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:         "Test Site",
+		BaseURL:       "https://example.com",
+		FooterContent: `<p>Contact: <a href="mailto:test@example.com">test@example.com</a></p>`,
+	}
+	page := model.Page{
+		Title: "About",
+		Slug:  "about",
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	// Footer content HTML should NOT be escaped
+	if !strings.Contains(got, `<a href="mailto:test@example.com">`) {
+		t.Error("RenderPage() footer content HTML should not be escaped")
+	}
+
+	// Should have the horizontal rule before footer content
+	if !strings.Contains(got, "<hr>") {
+		t.Error("RenderPage() should include <hr> before footer content")
+	}
+
+	// Should be wrapped in footer-content div
+	if !strings.Contains(got, `class="footer-content"`) {
+		t.Error("RenderPage() footer content should be wrapped in footer-content div")
+	}
+}
+
+func TestRenderPage_NoFooterContent(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:         "Test Site",
+		BaseURL:       "https://example.com",
+		FooterContent: "", // Empty footer content
+	}
+	page := model.Page{
+		Title: "About",
+		Slug:  "about",
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	// Should NOT have the horizontal rule when no footer content
+	// Count occurrences of <hr> - should be 0 in footer area
+	if strings.Contains(got, `<hr>`) && strings.Contains(got, `class="footer-content"`) {
+		t.Error("RenderPage() should not include <hr> when no footer content")
+	}
+}
+
 func TestRenderPage_CanonicalURL(t *testing.T) {
 	t.Parallel()
 

@@ -21,7 +21,12 @@ type Renderer struct {
 
 // New creates a new Renderer with embedded templates.
 func New() (*Renderer, error) {
-	tmpl, err := template.ParseFS(templateFS, "templates/*.html")
+	funcMap := template.FuncMap{
+		"safeHTML": func(s string) template.HTML {
+			return template.HTML(s)
+		},
+	}
+	tmpl, err := template.New("").Funcs(funcMap).ParseFS(templateFS, "templates/*.html")
 	if err != nil {
 		return nil, err
 	}

@@ -131,6 +131,20 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 		return site.Posts[i].Date.After(site.Posts[j].Date)
 	})
 
+	// Load optional footer content from _footer.md
+	footerPath := filepath.Join(b.cfg.ContentDir, "_footer.md")
+	if _, err := os.Stat(footerPath); err == nil {
+		footerBytes, err := os.ReadFile(footerPath)
+		if err != nil {
+			return nil, fmt.Errorf("reading footer: %w", err)
+		}
+		footerHTML, err := parser.MarkdownToHTMLWithError(string(footerBytes))
+		if err != nil {
+			return nil, fmt.Errorf("parsing _footer.md: %w", err)
+		}
+		site.FooterContent = footerHTML
+	}
+
 	return site, nil
 }
 
