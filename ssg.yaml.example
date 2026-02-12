@@ -67,6 +67,14 @@ navigation:
 #     - /now/
 #     - /moments/
 
+# Topic extraction (optional)
+# Extracts recurring subject words from page content and displays them
+# as a frequency-ranked list. Words are counted case-insensitively,
+# filtered for stop words, and capped at top 20.
+# topics:
+#   pages:
+#     - /moments/
+
 # Directory structure expected:
 #
 # project/

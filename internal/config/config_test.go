@@ -467,6 +467,84 @@ func TestLoad_FeedPagesOmitted(t *testing.T) {
 	}
 }
 
+func TestLoad_TopicPagesSpecified(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+topics:
+  pages:
+    - /moments/
+    - /now/
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	want := []string{"/moments/", "/now/"}
+	if len(cfg.TopicPages) != len(want) {
+		t.Fatalf("TopicPages = %v, want %v", cfg.TopicPages, want)
+	}
+	for i, p := range want {
+		if cfg.TopicPages[i] != p {
+			t.Errorf("TopicPages[%d] = %q, want %q", i, cfg.TopicPages[i], p)
+		}
+	}
+}
+
+func TestLoad_TopicPagesOmitted(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.TopicPages == nil {
+		t.Error("TopicPages should be initialized to empty slice, not nil")
+	}
+	if len(cfg.TopicPages) != 0 {
+		t.Errorf("TopicPages = %v, want empty slice", cfg.TopicPages)
+	}
+}
+
+func TestLoad_TopicPagesEmpty(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	cfgFile := filepath.Join(dir, "ssg.yaml")
+	content := `site:
+  title: "Test Site"
+  baseURL: "https://example.com"
+topics:
+  pages: []
+`
+	if err := os.WriteFile(cfgFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := config.Load(cfgFile)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if len(cfg.TopicPages) != 0 {
+		t.Errorf("TopicPages = %v, want empty slice", cfg.TopicPages)
+	}
+}
+
 func TestLoad_WithOGImage(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()

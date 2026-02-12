@@ -1797,6 +1797,78 @@ func TestRenderPage_ArchiveEmptyHidesSection(t *testing.T) {
 	}
 }
 
+func TestRenderPage_WithTopics(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+	page := model.Page{
+		Title:   "Moments",
+		Slug:    "moments",
+		Content: "<p>Content</p>",
+		Path:    "/moments/",
+		Topics: []model.Topic{
+			{Word: "agent", Count: 27},
+			{Word: "claude", Count: 21},
+			{Word: "docker", Count: 5},
+		},
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	if !strings.Contains(got, `class="topics"`) {
+		t.Error("RenderPage() should include topics container with class 'topics'")
+	}
+	if !strings.Contains(got, "agent (27)") {
+		t.Error("RenderPage() should include 'agent (27)' in topics")
+	}
+	if !strings.Contains(got, "claude (21)") {
+		t.Error("RenderPage() should include 'claude (21)' in topics")
+	}
+	if !strings.Contains(got, "docker (5)") {
+		t.Error("RenderPage() should include 'docker (5)' in topics")
+	}
+}
+
+func TestRenderPage_WithoutTopics(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+	page := model.Page{
+		Title:   "About",
+		Slug:    "about",
+		Content: "<p>Content</p>",
+		Path:    "/about/",
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	if strings.Contains(got, `class="topics"`) {
+		t.Error("RenderPage() should NOT include topics container when page has no topics")
+	}
+}
+
 func TestRenderBase_GoatCounterAnalytics(t *testing.T) {
 	t.Parallel()
 

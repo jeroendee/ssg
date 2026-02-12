@@ -55,6 +55,7 @@ type templateData struct {
 		DateAnchors       []string
 		CurrentMonthDates []string
 		ArchivedYears     []model.YearGroup
+		Topics            []model.Topic
 	}
 }
 
@@ -129,6 +130,7 @@ func (r *Renderer) RenderPage(site model.Site, page model.Page) (string, error) 
 	data.Page.DateAnchors = page.DateAnchors
 	data.Page.CurrentMonthDates = page.CurrentMonthDates
 	data.Page.ArchivedYears = page.ArchivedYears
+	data.Page.Topics = page.Topics
 
 	var buf bytes.Buffer
 	if err := r.templates.ExecuteTemplate(&buf, "base.html", data); err != nil {

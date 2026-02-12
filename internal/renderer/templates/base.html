@@ -42,6 +42,11 @@
             </div>
         </nav>
         {{end}}
+        {{if .Page.Topics}}
+        <div class="topics">
+            {{range $i, $t := .Page.Topics}}{{if $i}}, {{end}}{{$t.Word}} ({{$t.Count}}){{end}}
+        </div>
+        {{end}}
         <div class="content">
             {{.Page.Content}}
         </div>

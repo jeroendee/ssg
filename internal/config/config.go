@@ -34,6 +34,9 @@ type yamlConfig struct {
 	Feed struct {
 		Pages []string `yaml:"pages"`
 	} `yaml:"feed"`
+	Topics struct {
+		Pages []string `yaml:"pages"`
+	} `yaml:"topics"`
 }
 
 // Options provides CLI flag overrides for configuration.
@@ -73,6 +76,12 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 		feedPages = []string{}
 	}
 
+	// Initialize TopicPages to empty slice if nil
+	topicPages := yc.Topics.Pages
+	if topicPages == nil {
+		topicPages = []string{}
+	}
+
 	cfg := &model.Config{
 		Title:       yc.Site.Title,
 		Description: yc.Site.Description,
@@ -87,7 +96,8 @@ func LoadWithOptions(path string, opts Options) (*model.Config, error) {
 		Analytics: model.Analytics{
 			GoatCounter: yc.Analytics.GoatCounter,
 		},
-		FeedPages: feedPages,
+		FeedPages:  feedPages,
+		TopicPages: topicPages,
 	}
 
 	// Apply defaults

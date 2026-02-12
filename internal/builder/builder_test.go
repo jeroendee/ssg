@@ -2029,3 +2029,91 @@ func TestBuild_GeneratesBuildTimestamp(t *testing.T) {
 		t.Errorf("build.json buildTime %v is outside expected range [%v, %v]", buildTime, beforeBuild, afterBuild)
 	}
 }
+
+func TestScanContent_TopicsPopulated(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeHomeMd(t, dir)
+
+	// Create a page with repeated words that should produce topics
+	momentsContent := "---\ntitle: Moments\n---\n" +
+		"claude claude claude agent agent agent docker docker docker\n"
+	writeFile(t, filepath.Join(dir, "moments.md"), momentsContent)
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: dir,
+		TopicPages: []string{"/moments/"},
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	// Find the moments page
+	var momentsPage *model.Page
+	for i := range site.Pages {
+		if site.Pages[i].Slug == "moments" {
+			momentsPage = &site.Pages[i]
+			break
+		}
+	}
+	if momentsPage == nil {
+		t.Fatal("moments page not found")
+	}
+
+	if len(momentsPage.Topics) == 0 {
+		t.Error("moments page should have topics populated")
+	}
+
+	// Verify expected topics
+	topicMap := make(map[string]int)
+	for _, topic := range momentsPage.Topics {
+		topicMap[topic.Word] = topic.Count
+	}
+	if topicMap["claude"] != 3 {
+		t.Errorf("expected 'claude' with count 3, got %d", topicMap["claude"])
+	}
+	if topicMap["agent"] != 3 {
+		t.Errorf("expected 'agent' with count 3, got %d", topicMap["agent"])
+	}
+}
+
+func TestScanContent_TopicsNotPopulatedWithoutConfig(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeHomeMd(t, dir)
+
+	momentsContent := "---\ntitle: Moments\n---\n" +
+		"claude claude claude agent agent agent docker docker docker\n"
+	writeFile(t, filepath.Join(dir, "moments.md"), momentsContent)
+
+	cfg := &model.Config{
+		Title:      "Test Site",
+		BaseURL:    "https://example.com",
+		ContentDir: dir,
+		TopicPages: []string{}, // No topic pages configured
+	}
+
+	b := New(cfg)
+	site, err := b.ScanContent()
+	if err != nil {
+		t.Fatalf("ScanContent() error = %v", err)
+	}
+
+	// Find the moments page
+	for _, page := range site.Pages {
+		if page.Slug == "moments" {
+			if len(page.Topics) != 0 {
+				t.Errorf("moments page should NOT have topics when not configured, got %v", page.Topics)
+			}
+			return
+		}
+	}
+	t.Fatal("moments page not found")
+}

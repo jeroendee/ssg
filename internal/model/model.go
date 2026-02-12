@@ -34,6 +34,12 @@ type YearGroup struct {
 	Months []MonthGroup
 }
 
+// Topic represents a word with its frequency count.
+type Topic struct {
+	Word  string
+	Count int
+}
+
 // Analytics holds analytics configuration.
 type Analytics struct {
 	GoatCounter string
@@ -48,6 +54,7 @@ type Page struct {
 	DateAnchors       []string    // Date anchors for navigation (e.g., "2026-01-26")
 	CurrentMonthDates []string    // Dates from the most recent month
 	ArchivedYears     []YearGroup // Previous months grouped by year for archive navigation
+	Topics            []Topic     // Extracted topic words with frequency counts
 }
 
 // Post represents a blog post with date and summary.
@@ -90,6 +97,7 @@ type Config struct {
 	Navigation  []NavItem
 	Analytics   Analytics
 	FeedPages   []string
+	TopicPages  []string
 }
 
 // FaviconMIMEType returns the MIME type for the favicon based on file extension.
