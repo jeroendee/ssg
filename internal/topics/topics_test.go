@@ -134,7 +134,7 @@ func TestExtract_MinFrequencyThreshold(t *testing.T) {
 	}
 }
 
-func TestExtract_Top20Cap(t *testing.T) {
+func TestExtract_Top18Cap(t *testing.T) {
 	t.Parallel()
 	// Create 25 distinct words each appearing 3 times
 	var words []string
@@ -151,8 +151,8 @@ func TestExtract_Top20Cap(t *testing.T) {
 	md := strings.Join(words, " ")
 	result := topics.Extract(md)
 
-	if len(result) != 20 {
-		t.Errorf("expected 20 topics, got %d", len(result))
+	if len(result) != 18 {
+		t.Errorf("expected 18 topics, got %d", len(result))
 	}
 }
 

@@ -11,7 +11,7 @@ import (
 
 // Extract extracts recurring subject words from markdown content and returns
 // them as frequency-counted topics, sorted by count descending with
-// alphabetical tiebreaker. Returns at most 20 topics. Words must be at
+// alphabetical tiebreaker. Returns at most 18 topics. Words must be at
 // least 3 characters long and appear at least 2 times.
 func Extract(markdown string) []model.Topic {
 	if markdown == "" {
@@ -54,9 +54,9 @@ func Extract(markdown string) []model.Topic {
 		return result[i].Word < result[j].Word
 	})
 
-	// Cap at 20
-	if len(result) > 20 {
-		result = result[:20]
+	// Cap at 18
+	if len(result) > 18 {
+		result = result[:18]
 	}
 
 	return result
@@ -128,7 +128,7 @@ var stopWords = map[string]bool{
 	"into": true, "through": true, "during": true, "before": true,
 	"after": true, "above": true, "below": true, "between": true,
 	"under": true, "over": true, "out": true, "off": true, "up": true,
-	"down": true, "upon": true, "along": true, "across": true,
+	"down": true, "upon": true, "along": true, "across": true, "via": true,
 	// Pronouns
 	"he": true, "she": true, "it": true, "they": true, "we": true,
 	"you": true, "his": true, "her": true, "its": true, "their": true,
@@ -176,5 +176,5 @@ var stopWords = map[string]bool{
 	"people": true, "part": true, "place": true, "case": true,
 	"thing": true, "man": true, "world": true, "life": true,
 	"hand": true, "point": true, "end": true, "another": true,
-	"again": true,
+	"again": true, "don": true,
 }
