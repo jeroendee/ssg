@@ -1722,9 +1722,9 @@ func TestRenderPage_ArchiveHistoryWrapper(t *testing.T) {
 		BaseURL: "https://example.com",
 	}
 	page := model.Page{
-		Title: "Moments",
-		Slug:  "moments",
-		DateAnchors: []string{"2026-02-12"},
+		Title:             "Moments",
+		Slug:              "moments",
+		DateAnchors:       []string{"2026-02-12"},
 		CurrentMonthDates: []string{"2026-02-12"},
 		ArchivedYears: []model.YearGroup{
 			{
