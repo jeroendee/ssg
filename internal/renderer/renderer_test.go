@@ -1829,14 +1829,17 @@ func TestRenderPage_WithTopics(t *testing.T) {
 	if !strings.Contains(got, `class="topics"`) {
 		t.Error("RenderPage() should include topics container with class 'topics'")
 	}
-	if !strings.Contains(got, "agent (27)") {
-		t.Error("RenderPage() should include 'agent (27)' in topics")
+	if !strings.Contains(got, "agent") {
+		t.Error("RenderPage() should include 'agent' in topics")
 	}
-	if !strings.Contains(got, "claude (21)") {
-		t.Error("RenderPage() should include 'claude (21)' in topics")
+	if !strings.Contains(got, "claude") {
+		t.Error("RenderPage() should include 'claude' in topics")
 	}
-	if !strings.Contains(got, "docker (5)") {
-		t.Error("RenderPage() should include 'docker (5)' in topics")
+	if !strings.Contains(got, "docker") {
+		t.Error("RenderPage() should include 'docker' in topics")
+	}
+	if strings.Contains(got, "agent (27)") {
+		t.Error("RenderPage() should NOT include counts in topics display")
 	}
 }
 

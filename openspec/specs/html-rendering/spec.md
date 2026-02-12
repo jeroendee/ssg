@@ -410,7 +410,7 @@ The system SHALL render a topics discovery bar on pages that have extracted topi
 - **WHEN** rendering a page that has topics extracted
 - **THEN** the rendered output SHALL include a topics container element
 - **AND** the topics container SHALL appear between the date navigation and the content
-- **AND** each topic SHALL be displayed as "word (count)" format
+- **AND** each topic SHALL be displayed as the word only, without a count
 - **AND** topics SHALL be separated by commas and spaces
 - **AND** topics SHALL be ordered by frequency descending (matching extraction order)
 
