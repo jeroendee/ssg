@@ -17,27 +17,28 @@
                         </ul>
                     </details>
                 </div>
+                {{if .Page.ArchivedYears}}
                 <div class="archive">
-                    {{if .Page.ArchivedYears}}
-                    {{range .Page.ArchivedYears}}
                     <details>
-                        <summary>{{.Year}}</summary>
-                        {{range .Months}}
+                        <summary>History</summary>
+                        {{range .Page.ArchivedYears}}
                         <details>
-                            <summary>{{.Month}}</summary>
-                            <ul>
-                                {{range .Dates}}
-                                <li><a href="#{{.}}">{{.}}</a></li>
-                                {{end}}
-                            </ul>
+                            <summary>{{.Year}}</summary>
+                            {{range .Months}}
+                            <details>
+                                <summary>{{.Month}}</summary>
+                                <ul>
+                                    {{range .Dates}}
+                                    <li><a href="#{{.}}">{{.}}</a></li>
+                                    {{end}}
+                                </ul>
+                            </details>
+                            {{end}}
                         </details>
                         {{end}}
                     </details>
-                    {{end}}
-                    {{else}}
-                    <p class="archive-empty">No archives yet</p>
-                    {{end}}
                 </div>
+                {{end}}
             </div>
         </nav>
         {{end}}
