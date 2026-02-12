@@ -237,6 +237,13 @@ ul.blog-list li a:visited {
   color: var(--text-secondary);
 }
 
+/* Topics bar */
+.topics {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
 /* Date navigation - two-column layout */
 .date-nav-container {
   display: flex;

@@ -16,6 +16,7 @@ import (
 	"github.com/jeroendee/ssg/internal/model"
 	"github.com/jeroendee/ssg/internal/parser"
 	"github.com/jeroendee/ssg/internal/renderer"
+	"github.com/jeroendee/ssg/internal/topics"
 )
 
 // Page is an alias for model.Page for internal use.
@@ -98,6 +99,18 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 		site.Pages = append(site.Pages, *page)
 	}
 
+	// Extract topics for configured pages
+	for i := range site.Pages {
+		if !isTopicPage(site.Pages[i].Path, b.cfg.TopicPages) {
+			continue
+		}
+		body, err := readMarkdownBody(b.cfg.ContentDir, site.Pages[i].Slug)
+		if err != nil {
+			return nil, fmt.Errorf("reading markdown for topics: %w", err)
+		}
+		site.Pages[i].Topics = topics.Extract(body)
+	}
+
 	// Scan for posts (markdown files in blog/ subdirectory)
 	blogDir := filepath.Join(b.cfg.ContentDir, "blog")
 	if _, err := os.Stat(blogDir); err == nil {
@@ -146,6 +159,45 @@ func (b *Builder) ScanContent() (*model.Site, error) {
 	}
 
 	return site, nil
+}
+
+// isTopicPage checks if a page path is in the configured topic pages list.
+func isTopicPage(pagePath string, topicPages []string) bool {
+	for _, tp := range topicPages {
+		normalized := tp
+		if !strings.HasSuffix(normalized, "/") {
+			normalized += "/"
+		}
+		if !strings.HasPrefix(normalized, "/") {
+			normalized = "/" + normalized
+		}
+		if pagePath == normalized {
+			return true
+		}
+	}
+	return false
+}
+
+// readMarkdownBody reads a markdown file and returns the body after frontmatter extraction.
+func readMarkdownBody(contentDir, slug string) (string, error) {
+	filename := slug + ".md"
+	if slug == "" {
+		filename = "home.md"
+	}
+	path := filepath.Join(contentDir, filename)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	content := string(data)
+	// Strip frontmatter
+	if strings.HasPrefix(content, "---") {
+		parts := strings.SplitN(content, "---", 3)
+		if len(parts) >= 3 {
+			return strings.TrimSpace(parts[2]), nil
+		}
+	}
+	return content, nil
 }
 
 // isMarkdownFile returns true if the filename has a .md extension.
