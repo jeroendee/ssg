@@ -83,17 +83,17 @@ The system SHALL exclude words that appear fewer than 2 times.
 - **WHEN** extracting topics from markdown where "docker" appears exactly 2 times
 - **THEN** "docker" SHALL appear in the results with count 2
 
-### Requirement: Limit to top 20 topics
+### Requirement: Limit to top 18 topics
 
-The system SHALL return at most 20 topics.
+The system SHALL return at most 18 topics.
 
-#### Scenario: More than 20 qualifying words
+#### Scenario: More than 18 qualifying words
 
-- **WHEN** extracting topics from markdown with more than 20 distinct qualifying words
-- **THEN** the result SHALL contain exactly 20 topics
-- **AND** the 20 topics SHALL be those with the highest frequencies
+- **WHEN** extracting topics from markdown with more than 18 distinct qualifying words
+- **THEN** the result SHALL contain exactly 18 topics
+- **AND** the 18 topics SHALL be those with the highest frequencies
 
-#### Scenario: Fewer than 20 qualifying words
+#### Scenario: Fewer than 18 qualifying words
 
 - **WHEN** extracting topics from markdown with 5 distinct qualifying words
 - **THEN** the result SHALL contain exactly 5 topics
