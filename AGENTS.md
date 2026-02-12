@@ -1,205 +1,92 @@
+# Project Context
 
-## Issue Tracking with bd (beads)
+Project-specific instructions and guidelines:
 
-**IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
+## Overview
 
-### Why bd?
+**ssg** is a minimal static site generator for blogs, written in Go. It converts Markdown files with YAML frontmatter into a complete static website with clean URLs, RSS feed, sitemap, SEO metadata, and automatic light/dark theme support.
 
-- Dependency-aware: Track blockers and relationships between issues
-- Git-friendly: Auto-syncs to JSONL for version control
-- Agent-optimized: JSON output, ready work detection, discovered-from links
-- Prevents duplicate tracking systems and confusion
+## Tech Stack
 
-### Quick Start
+- **Language**: Go 1.25
+- **Markdown**: Goldmark (CommonMark compliant, with GFM table extension)
+- **CLI**: Cobra
+- **Config**: YAML via `gopkg.in/yaml.v3`
+- **Build**: Make with version injection via ldflags
+- **Change management**: OpenSpec (artifact-driven workflow in `openspec/`)
 
-**Check for ready work:**
-```bash
-bd ready --json
+## Architecture
+
+```
+cmd/ssg/           CLI entry point (Cobra commands: build, serve, version)
+internal/
+  model/           Data types: Site, Page, Post, Config, NavItem, FeedItem
+  config/          YAML config loading with CLI override support
+  parser/          Markdown parsing, frontmatter extraction, date anchors
+  builder/         Site orchestration: scanning, rendering, asset copying
+  renderer/        HTML template rendering (embedded templates)
+  assets/          Embedded default stylesheet
+  server/          Development HTTP server
+  wordcount/       Word count for blog posts
 ```
 
-**Create new issues:**
-```bash
-bd create "Issue title" -t bug|feature|task -p 0-4 --json
-bd create "Issue title" -p 1 --deps discovered-from:bd-123 --json
-bd create "Subtask" --parent <epic-id> --json  # Hierarchical subtask (gets ID like epic-id.1)
-```
+**Dependency flow**: `cmd/ssg` → `builder` → `parser`, `renderer`, `model`, `assets`. No circular dependencies.
 
-**Claim and update:**
-```bash
-bd update bd-42 --status in_progress --json
-bd update bd-42 --priority 1 --json
-```
+## Key Conventions
 
-**Complete work:**
-```bash
-bd close bd-42 --reason "Completed" --json
-```
+### Code Style
+- Standard `go fmt` formatting
+- Package names: lowercase, single-word
+- Exported functions have doc comments starting with function name
+- Error messages: lowercase, no trailing punctuation
+- Constructor pattern: `New(cfg)` returns initialized structs
+- Setter injection for optional config: `SetVersion()`, `SetAssetsDir()`
 
-### Issue Types
+### Testing
+- Test files live alongside source (`*_test.go`)
+- Table-driven tests with named cases
+- **All tests use `t.Parallel()`** — no exceptions
+- File system isolation via `t.TempDir()`
+- Helper pattern: `writeFile(t, path, content)`, `writeHomeMd(t, dir)`
+- Integration tests in `integration_test.go` at package root
+- Run all tests: `make test` or `go test ./...`
 
-- `bug` - Something broken
-- `feature` - New functionality
-- `task` - Work item (tests, docs, refactoring)
-- `epic` - Large feature with subtasks
-- `chore` - Maintenance (dependencies, tooling)
+### Build & Development
+- `make all` — CI pipeline: fmt → vet → test → build
+- `make dev` — quick restart: kill server, copy assets, serve
+- `make serve` — full workflow: kill, assets, build, serve on `:8080`
+- Binary output: `bin/ssg`
+- Version injected from git SHA via ldflags
 
-### Priorities
+## Content Model
 
-- `0` - Critical (security, data loss, broken builds)
-- `1` - High (major features, important bugs)
-- `2` - Medium (default, nice-to-have)
-- `3` - Low (polish, optimization)
-- `4` - Backlog (future ideas)
+- **`content/home.md`** — Required. Build fails without it.
+- **`content/*.md`** — Static pages. Slug derived from filename.
+- **`content/_footer.md`** — Optional. Rendered as site-wide footer.
+- **`content/blog/YYYY-MM-DD-slug.md`** — Blog posts. Date extracted from filename, overridable via frontmatter `date` field.
+- **`content/blog/assets/`** — Co-located images for posts. Paths rewritten at build time.
+- **Frontmatter fields**: `title` (required), `summary`, `date` (optional override)
+- **Date-anchored pages**: Headings like `# *2026-01-15*` create navigable date sections with archive grouping.
 
-### Workflow for AI Agents
+## Output
 
-1. **Check ready work**: `bd ready` shows unblocked issues
-2. **Claim your task**: `bd update <id> --status in_progress`
-3. **Work on it**: Implement, test, document
-4. **Discover new work?** Create linked issue:
-   - `bd create "Found bug" -p 1 --deps discovered-from:<parent-id>`
-5. **Complete**: `bd close <id> --reason "Done"`
-6. **Commit together**: Always commit the `.beads/issues.jsonl` file together with the code changes so issue state stays in sync with code state
+Clean URLs: `content/about.md` → `public/about/index.html` → `/about/`
 
-### Auto-Sync
+Generated files: `index.html`, `404.html`, `robots.txt`, `sitemap.xml`, `feed.xml`, `build.json`, `style.css`
 
-bd automatically syncs with git:
-- Exports to `.beads/issues.jsonl` after changes (5s debounce)
-- Imports from JSONL when newer (e.g., after `git pull`)
-- No manual export/import needed!
+## Important Constraints
 
-### GitHub Copilot Integration
+- **Output directory validation**: Builder rejects `/`, `~`, `.`, `..`, or paths outside the project root before `rm -rf`.
+- **Feed pages**: Configurable in `ssg.yaml` under `feed.pages` — date-anchored page sections appear in RSS alongside blog posts.
+- **Default stylesheet**: Embedded in `internal/assets/`. A custom `assets/style.css` overrides it.
+- **No runtime dependencies**: Output is self-contained static HTML.
 
-If using GitHub Copilot, also create `.github/copilot-instructions.md` for automatic instruction loading.
-Run `bd onboard` to get the content, or see step 2 of the onboard instructions.
+## Configuration
 
-### MCP Server (Recommended)
+Config file: `ssg.yaml` (see `ssg.yaml.example` for full reference).
 
-If using Claude or MCP-compatible clients, install the beads MCP server:
+Required fields: `site.title`, `site.baseURL`. Everything else has defaults.
 
-```bash
-pip install beads-mcp
-```
+## Development Site
 
-Add to MCP config (e.g., `~/.config/claude/config.json`):
-```json
-{
-  "beads": {
-    "command": "beads-mcp",
-    "args": []
-  }
-}
-```
-
-Then use `mcp__beads__*` functions instead of CLI commands.
-
-### Managing AI-Generated Planning Documents
-
-AI assistants often create planning and design documents during development:
-- PLAN.md, IMPLEMENTATION.md, ARCHITECTURE.md
-- DESIGN.md, CODEBASE_SUMMARY.md, INTEGRATION_PLAN.md
-- TESTING_GUIDE.md, TECHNICAL_DESIGN.md, and similar files
-
-**Best Practice: Use a dedicated directory for these ephemeral files**
-
-**Recommended approach:**
-- Create a `history/` directory in the project root
-- Store ALL AI-generated planning/design docs in `history/`
-- Keep the repository root clean and focused on permanent project files
-- Only access `history/` when explicitly asked to review past planning
-
-**Example .gitignore entry (optional):**
-```
-# AI planning documents (ephemeral)
-history/
-```
-
-**Benefits:**
-- Clean repository root
-- Clear separation between ephemeral and permanent documentation
-- Easy to exclude from version control if desired
-- Preserves planning history for archeological research
-- Reduces noise when browsing the project
-
-### CLI Help
-
-Run `bd <command> --help` to see all available flags for any command.
-For example: `bd create --help` shows `--parent`, `--deps`, `--assignee`, etc.
-
-### Important Rules
-
-- Use bd for ALL task tracking
-- Always use `--json` flag for programmatic use
-- Link discovered work with `discovered-from` dependencies
-- Check `bd ready` before asking "what should I work on?"
-- Store AI planning docs in `history/` directory
-- Run `bd <cmd> --help` to discover available flags
-- Do NOT create markdown TODO lists
-- Do NOT use external issue trackers
-- Do NOT duplicate tracking systems
-- Do NOT clutter repo root with planning documents
-
-For more details, see README.md and QUICKSTART.md.
-
-<!-- bv-agent-instructions-v1 -->
-
----
-
-## Beads Workflow Integration
-
-This project uses [beads_viewer](https://github.com/Dicklesworthstone/beads_viewer) for issue tracking. Issues are stored in `.beads/` and tracked in git.
-
-### Essential Commands
-
-```bash
-# View issues (launches TUI - avoid in automated sessions)
-bv
-
-# CLI commands for agents (use these instead)
-bd ready              # Show issues ready to work (no blockers)
-bd list --status=open # All open issues
-bd show <id>          # Full issue details with dependencies
-bd create --title="..." --type=task --priority=2
-bd update <id> --status=in_progress
-bd close <id> --reason="Completed"
-bd close <id1> <id2>  # Close multiple issues at once
-bd sync               # Commit and push changes
-```
-
-### Workflow Pattern
-
-1. **Start**: Run `bd ready` to find actionable work
-2. **Claim**: Use `bd update <id> --status=in_progress`
-3. **Work**: Implement the task
-4. **Complete**: Use `bd close <id>`
-5. **Sync**: Always run `bd sync` at session end
-
-### Key Concepts
-
-- **Dependencies**: Issues can block other issues. `bd ready` shows only unblocked work.
-- **Priority**: P0=critical, P1=high, P2=medium, P3=low, P4=backlog (use numbers, not words)
-- **Types**: task, bug, feature, epic, question, docs
-- **Blocking**: `bd dep add <issue> <depends-on>` to add dependencies
-
-### Session Protocol
-
-**Before ending any session, run this checklist:**
-
-```bash
-git status              # Check what changed
-git add <files>         # Stage code changes
-bd sync                 # Commit beads changes
-git commit -m "..."     # Commit code
-bd sync                 # Commit any new beads changes
-git push                # Push to remote
-```
-
-### Best Practices
-
-- Check `bd ready` at session start to find available work
-- Update status as you work (in_progress → closed)
-- Create new issues with `bd create` when you discover tasks
-- Use descriptive titles and set appropriate priority/type
-- Always `bd sync` before ending session
-
-<!-- end-bv-agent-instructions -->
+The `dev/` directory contains a working site for local development. It is gitignored and used by `make serve` / `make dev`.

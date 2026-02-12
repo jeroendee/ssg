@@ -1709,6 +1709,94 @@ func TestRenderBlogPost_NoOGImageWhenBothEmpty(t *testing.T) {
 	}
 }
 
+func TestRenderPage_ArchiveHistoryWrapper(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+	page := model.Page{
+		Title: "Moments",
+		Slug:  "moments",
+		DateAnchors: []string{"2026-02-12"},
+		CurrentMonthDates: []string{"2026-02-12"},
+		ArchivedYears: []model.YearGroup{
+			{
+				Year: 2025,
+				Months: []model.MonthGroup{
+					{
+						Year:  2025,
+						Month: "December",
+						Dates: []string{"2025-12-25"},
+					},
+				},
+			},
+		},
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	// Archive years should be wrapped in a History details element
+	if !strings.Contains(got, "<summary>History</summary>") {
+		t.Error("RenderPage() archive section should contain History summary")
+	}
+
+	// Year details should still be present inside the History wrapper
+	if !strings.Contains(got, "<summary>2025</summary>") {
+		t.Error("RenderPage() archive section should contain year summary")
+	}
+
+	// Month details should still be present
+	if !strings.Contains(got, "<summary>December</summary>") {
+		t.Error("RenderPage() archive section should contain month summary")
+	}
+}
+
+func TestRenderPage_ArchiveEmptyHidesSection(t *testing.T) {
+	t.Parallel()
+
+	r, err := New()
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	site := model.Site{
+		Title:   "Test Site",
+		BaseURL: "https://example.com",
+	}
+	page := model.Page{
+		Title:             "Moments",
+		Slug:              "moments",
+		DateAnchors:       []string{"2026-02-12"},
+		CurrentMonthDates: []string{"2026-02-12"},
+		ArchivedYears:     nil, // No archived years
+	}
+
+	got, err := r.RenderPage(site, page)
+	if err != nil {
+		t.Fatalf("RenderPage() error = %v", err)
+	}
+
+	// Should NOT contain "No archives yet" placeholder
+	if strings.Contains(got, "No archives yet") {
+		t.Error("RenderPage() should not display 'No archives yet' when archive is empty")
+	}
+
+	// Should NOT contain History summary when empty
+	if strings.Contains(got, "<summary>History</summary>") {
+		t.Error("RenderPage() should not render History wrapper when archive is empty")
+	}
+}
+
 func TestRenderBase_GoatCounterAnalytics(t *testing.T) {
 	t.Parallel()
 
