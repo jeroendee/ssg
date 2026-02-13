@@ -177,4 +177,5 @@ var stopWords = map[string]bool{
 	"thing": true, "man": true, "world": true, "life": true,
 	"hand": true, "point": true, "end": true, "another": true,
 	"again": true, "don": true, "article": true, "post": true, "dev": true,
+	"based": true,
 }
